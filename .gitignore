@@ -34,3 +34,4 @@ backend/go.sum
 
 # IDE
 .idea/
+.venv/
