@@ -103,37 +103,38 @@ for i in "${!LEVELS[@]}"; do
     name=${LEVEL_NAMES[$i]}
     qps=$(echo "$BASELINE * $level" | bc -l | awk '{printf "%.0f", $1}')
 
+    # Calculate half duration for the sequential test
+    HALF_DURATION=$((DURATION / 2))
+
     echo "========================================="
     echo "Step $((i+1))/9: Load Level $name"
     echo "Target: ${qps} req/sec per algorithm"
     echo "========================================="
     echo ""
 
-    echo "Starting load test on both algorithms..."
+    echo "--- Phase 1: Round-Robin (${HALF_DURATION}s) ---"
+    hey -z ${HALF_DURATION}s -q $qps http://${RR_HOST} > /tmp/rr_${i}.txt 2>&1
 
-    hey -z ${DURATION}s -q $qps http://${PREQUAL_HOST} > /tmp/prequal_${i}.txt 2>&1 &
-    PID_PREQUAL=$!
+    echo "Cooldown for 10 seconds..."
+    sleep 10
 
-    hey -z ${DURATION}s -q $qps http://${RR_HOST} > /tmp/rr_${i}.txt 2>&1 &
-    PID_RR=$!
-
-    wait $PID_PREQUAL
-    wait $PID_RR
-
-    echo ""
-    echo "--- Prequal Results ---"
-    grep -E "Requests/sec:|p50|p99|p99.9" /tmp/prequal_${i}.txt | head -5
+    echo "--- Phase 2: Prequal (${HALF_DURATION}s) ---"
+    hey -z ${HALF_DURATION}s -q $qps http://${PREQUAL_HOST} > /tmp/prequal_${i}.txt 2>&1
 
     echo ""
     echo "--- Round-Robin Results ---"
     grep -E "Requests/sec:|p50|p99|p99.9" /tmp/rr_${i}.txt | head -5
 
     echo ""
+    echo "--- Prequal Results ---"
+    grep -E "Requests/sec:|p50|p99|p99.9" /tmp/prequal_${i}.txt | head -5
+
+    echo ""
     echo "Completed step $((i+1))/9"
     echo ""
 
     if [ $i -lt 8 ]; then
-        echo "Pausing 10 seconds before next level..."
+        echo "Pausing 10 seconds before next load level..."
         sleep 10
     fi
 done
