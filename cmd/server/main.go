@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -45,15 +46,16 @@ func main() {
 
 	logger.Info("Load balancer configured", slog.String("algorithm", string(config.Algorithm)))
 
-	testServers := []string{
-		"server1:80",
-		"server2:80",
-		"server3:80",
+	var testServers []string
+	if envServers := os.Getenv("BACKEND_SERVERS"); envServers != "" {
+		testServers = strings.Split(envServers, ",")
+	} else {
+		testServers = []string{"server1:80", "server2:80", "server3:80"}
 	}
 
 	for i, addr := range testServers {
 		lb.AddServer(&loadbalancer.Server{
-			ID:        fmt.Sprintf("server-%d", i),
+			ID:        fmt.Sprintf("server-%d", i+1),
 			Address:   addr,
 			IsHealthy: true,
 		})
