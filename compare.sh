@@ -2,6 +2,9 @@
 
 set -e
 
+PREQUAL_HOST=${PREQUAL_HOST:-"localhost:8080"}
+RR_HOST=${RR_HOST:-"localhost:8081"}
+
 print_usage() {
     cat << EOF
 Usage: $0 [OPTIONS]
@@ -108,10 +111,10 @@ for i in "${!LEVELS[@]}"; do
 
     echo "Starting load test on both algorithms..."
 
-    hey -z ${DURATION}s -q $qps http://localhost:8080 > /tmp/prequal_${i}.txt 2>&1 &
+    hey -z ${DURATION}s -q $qps http://${PREQUAL_HOST} > /tmp/prequal_${i}.txt 2>&1 &
     PID_PREQUAL=$!
 
-    hey -z ${DURATION}s -q $qps http://localhost:8081 > /tmp/rr_${i}.txt 2>&1 &
+    hey -z ${DURATION}s -q $qps http://${RR_HOST} > /tmp/rr_${i}.txt 2>&1 &
     PID_RR=$!
 
     wait $PID_PREQUAL
