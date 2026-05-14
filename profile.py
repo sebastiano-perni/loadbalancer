@@ -6,7 +6,7 @@ pc = portal.Context()
 
 # Define parameters
 pc.defineParameter("backendCount", "Number of Backend Servers", portal.ParameterType.INTEGER, 13)
-pc.defineParameter("hwType", "Hardware Type", portal.ParameterType.STRING, "", advanced=False)
+pc.defineParameter("hwType", "Hardware Type", portal.ParameterType.NODETYPE, "", advanced=False)
 
 params = pc.bindParameters()
 
@@ -48,4 +48,4 @@ for i in range(1, params.backendCount + 1):
     add_node("backend-%d" % i)
 
 # Print the RSpec to the enclosing context
-pc.printRequestRSpec()
+pc.printRequestRSpec(request)
