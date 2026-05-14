@@ -45,12 +45,12 @@ check_hey() {
 
 check_services() {
     echo "Checking services..."
-    if ! curl -s http://localhost:8080/health > /dev/null 2>&1; then
+    if ! curl -s "http://${PREQUAL_HOST}/health" > /dev/null 2>&1; then
         echo "Error: Prequal load balancer not responding on port 8080"
         echo "Start services with: docker-compose up -d"
         exit 1
     fi
-    if ! curl -s http://localhost:8081/health > /dev/null 2>&1; then
+    if ! curl -s "http://${RR_HOST}/health" > /dev/null 2>&1; then
         echo "Error: Round-Robin load balancer not responding on port 8081"
         echo "Start services with: docker-compose up -d"
         exit 1
@@ -91,7 +91,7 @@ echo ""
 
 echo "Determining baseline capacity..."
 echo "Running calibration test (30s on Prequal)..."
-BASELINE=$(hey -z 30s -q 100 http://localhost:8080 2>&1 | grep "Requests/sec:" | awk '{print $2}')
+BASELINE=$(hey -z 30s -q 100 "http://${PREQUAL_HOST}" 2>&1 | grep "Requests/sec:" | awk '{print $2}')
 echo "Baseline capacity: ${BASELINE} req/sec"
 echo ""
 
@@ -144,8 +144,7 @@ echo "========================================="
 echo "         Test Complete"
 echo "========================================="
 echo ""
-echo "View comparison in Grafana:"
-echo "  http://localhost:3001"
+echo "View comparison in Grafana"
 echo ""
 echo "Use the algorithm dropdown to filter or show both"
 echo ""

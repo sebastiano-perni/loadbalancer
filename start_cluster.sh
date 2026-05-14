@@ -13,7 +13,7 @@ ssh -o StrictHostKeyChecking=no lb-prequal "pkill -f lb-binary" 2>/dev/null
 ssh -o StrictHostKeyChecking=no lb-rr "pkill -f lb-binary" 2>/dev/null
 
 echo "Starting Telemetry (Prometheus & Grafana)..."
-ssh -o StrictHostKeyChecking=no telemetry "cd /local/repository && docker compose up -d prometheus grafana"
+ssh -o StrictHostKeyChecking=no telemetry "cd /local/repository && docker compose -f docker-compose.telemetry.yml up -d"
 
 echo "Starting Backend Servers..."
 # Simulate antagonists on up to the first 3 backends
@@ -22,14 +22,14 @@ if [ "$BACKEND_COUNT" -lt 3 ]; then CONTENDED_COUNT=$BACKEND_COUNT; fi
 
 for i in $(seq 1 $CONTENDED_COUNT); do
     echo "  -> Starting backend-$i (Contended: CPU_LOAD=60)"
-    ssh -o StrictHostKeyChecking=no backend-$i "cd /local/repository/backend && PORT=80 CPU_LOAD=60 nohup ./backend-binary > /tmp/backend.log 2>&1 &"
+    ssh -o StrictHostKeyChecking=no backend-$i "cd /local/repository/backend && GOMAXPROCS=1 PORT=80 CPU_LOAD=60 SERVER_ID=backend-$i nohup ./backend-binary > /tmp/backend.log 2>&1 &"
 done
 
 # Start the remaining backends as clean servers
 if [ "$BACKEND_COUNT" -gt "$CONTENDED_COUNT" ]; then
     for i in $(seq $((CONTENDED_COUNT + 1)) $BACKEND_COUNT); do
         echo "  -> Starting backend-$i (Clean: CPU_LOAD=0)"
-        ssh -o StrictHostKeyChecking=no backend-$i "cd /local/repository/backend && PORT=80 CPU_LOAD=0 nohup ./backend-binary > /tmp/backend.log 2>&1 &"
+        ssh -o StrictHostKeyChecking=no backend-$i "cd /local/repository/backend && GOMAXPROCS=1 PORT=80 CPU_LOAD=0 SERVER_ID=backend-$i nohup ./backend-binary > /tmp/backend.log 2>&1 &"
     done
 fi
 
