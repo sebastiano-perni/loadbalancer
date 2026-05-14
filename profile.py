@@ -33,7 +33,7 @@ add_node("lb-rr")
 
 # 4. Backend Servers (13 nodes)
 for i in range(1, 14):
-    add_node(f"backend-{i}")
+    add_node("backend-%d" % i)
 
 # Print the RSpec to the enclosing context
 portal.context.printRequestRSpec()
