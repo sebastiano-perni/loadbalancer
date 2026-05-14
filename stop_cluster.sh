@@ -2,8 +2,12 @@
 # stop_cluster.sh
 # Should be executed from the "client" node.
 
-echo "Stopping Backend Servers and cleaning logs..."
-for i in {1..13}; do
+# Auto-detect number of backends from /etc/hosts
+BACKEND_COUNT=$(grep -o 'backend-[0-9]\+' /etc/hosts | sort -u | wc -l)
+if [ "$BACKEND_COUNT" -eq 0 ]; then BACKEND_COUNT=13; fi
+
+echo "Stopping Backend Servers and cleaning logs ($BACKEND_COUNT nodes)..."
+for i in $(seq 1 $BACKEND_COUNT); do
     ssh -o StrictHostKeyChecking=no backend-$i "pkill -f backend-binary; rm -f /tmp/backend.log" 2>/dev/null
 done
 echo "  -> Backends stopped."
