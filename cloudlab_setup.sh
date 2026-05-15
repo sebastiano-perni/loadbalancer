@@ -9,12 +9,12 @@ sudo apt-get install -y wget curl git bc
 wget https://go.dev/dl/go1.24.2.linux-amd64.tar.gz
 sudo rm -rf /usr/local/go
 sudo tar -C /usr/local -xzf go1.24.2.linux-amd64.tar.gz
-echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
+echo 'export PATH=$PATH:/usr/local/go/bin' | sudo tee -a /etc/profile
 source /etc/profile
 
 # Install hey for load generation
-/usr/local/go/bin/go install github.com/rakyll/hey@latest
-echo 'export PATH=$PATH:/root/go/bin' >> /etc/profile
+sudo /usr/local/go/bin/go install github.com/rakyll/hey@latest
+echo 'export PATH=$PATH:/root/go/bin' | sudo tee -a /etc/profile
 
 # Install Docker
 curl -fsSL https://get.docker.com -o get-docker.sh
