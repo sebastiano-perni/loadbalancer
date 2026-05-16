@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eo pipefail
+
 # Update and install dependencies
 sudo apt-get update
 sudo apt-get install -y wget curl git bc hey
@@ -15,6 +17,8 @@ export PATH=$PATH:/usr/local/go/bin
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 rm get-docker.sh
+
+sudo usermod -aG docker $USER
 
 # Build the binaries
 cd /local/repository || exit
