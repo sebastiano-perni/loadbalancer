@@ -1,5 +1,4 @@
 #!/bin/bash
-# run_test.sh
 # Should be executed from the "client" node.
 
 export PREQUAL_HOST="lb-prequal:8080"

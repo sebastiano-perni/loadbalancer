@@ -5,7 +5,7 @@ import geni.rspec.pg as pg
 pc = portal.Context()
 
 # Define parameters
-pc.defineParameter("backendCount", "Number of Backend Servers", portal.ParameterType.INTEGER, 13)
+pc.defineParameter("backendCount", "Number of Backend Servers", portal.ParameterType.INTEGER, 10)
 pc.defineParameter("hwType", "Hardware Type", portal.ParameterType.NODETYPE, "", advanced=False)
 
 params = pc.bindParameters()
