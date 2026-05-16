@@ -9,7 +9,7 @@ if [ -z "$BACKENDS" ]; then
     echo "Warning: No backend nodes detected in /etc/hosts (Found: $BACKENDS)"
 fi
 
-ALL_NODES="lb-prequal lb-rr $BACKENDS"
+ALL_NODES="client telemetry lb-prequal lb-rr $BACKENDS"
 
 echo "1. Setting up all nodes in parallel..."
 
