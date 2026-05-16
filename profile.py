@@ -1,5 +1,4 @@
 import geni.portal as portal
-import geni.rspec.pg as pg
 
 # Setup portal context
 pc = portal.Context()
@@ -28,8 +27,6 @@ def add_node(name):
     iface = node.addInterface("if1")
     lan.addInterface(iface)
 
-    # Execute the initialization script on boot
-    node.addService(pg.Execute(shell="bash", command="/local/repository/cloudlab_setup.sh > /tmp/setup.log 2>&1"))
     return node
 
 
