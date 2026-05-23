@@ -7,7 +7,7 @@ if [ "$BACKEND_COUNT" -eq 0 ]; then BACKEND_COUNT=10; fi
 echo "Detected $BACKEND_COUNT backend nodes."
 
 echo "Cleaning up any existing processes across the cluster..."
-for i in $(seq 1 "$BACKEND_COUNT"); do ssh -o StrictHostKeyChecking=no "backend-$i" "pkill -f backend-binary" 2>/dev/null; done
+for i in $(seq 1 "$BACKEND_COUNT"); do ssh -o StrictHostKeyChecking=no "backend-$i" "pkill -f backend-binary; pkill -f stress-ng" 2>/dev/null; done
 ssh -o StrictHostKeyChecking=no lb-prequal "pkill -f lb-binary" 2>/dev/null
 ssh -o StrictHostKeyChecking=no lb-rr "pkill -f lb-binary" 2>/dev/null
 
@@ -15,20 +15,23 @@ echo "Starting Telemetry (Prometheus & Grafana)..."
 ssh -o StrictHostKeyChecking=no telemetry "cd /local/repository && docker compose -f docker-compose.telemetry.yml up -d"
 
 echo "Starting Backend Servers..."
-# Simulate antagonists on up to the first 5 backends
-CONTENDED_COUNT=5
-if [ "$BACKEND_COUNT" -lt 5 ]; then CONTENDED_COUNT=$BACKEND_COUNT; fi
+# Simulate antagonists on up to the first 3 backends
+CONTENDED_COUNT=${CONTENDED_COUNT:-3}
+STRESS_WORKERS=${STRESS_WORKERS:-2}
+STRESS_LOAD=${STRESS_LOAD:-60}
+
+if [ "$BACKEND_COUNT" -lt "$CONTENDED_COUNT" ]; then CONTENDED_COUNT=$BACKEND_COUNT; fi
 
 for i in $(seq 1 "$CONTENDED_COUNT"); do
-    echo "  -> Starting backend-$i (Contended: CPU_LOAD=60)"
-    ssh -o StrictHostKeyChecking=no "backend-$i" "cd /local/repository/backend && GOMAXPROCS=1 PORT=80 CPU_LOAD=60 SERVER_ID=backend-$i nohup ./backend-binary > /tmp/backend.log 2>&1 &" &
+    echo "  -> Starting backend-$i (Contended: STRESS_WORKERS=$STRESS_WORKERS, STRESS_LOAD=$STRESS_LOAD%)"
+    ssh -o StrictHostKeyChecking=no "backend-$i" "nohup stress-ng --cpu $STRESS_WORKERS --cpu-load $STRESS_LOAD > /tmp/stress.log 2>&1 & cd /local/repository/backend && GOMAXPROCS=1 PORT=80 SERVER_ID=backend-$i nohup ./backend-binary > /tmp/backend.log 2>&1 &" &
 done
 
 # Start the remaining backends as clean servers
 if [ "$BACKEND_COUNT" -gt "$CONTENDED_COUNT" ]; then
     for i in $(seq $((CONTENDED_COUNT + 1)) "$BACKEND_COUNT"); do
-        echo "  -> Starting backend-$i (Clean: CPU_LOAD=0)"
-        ssh -o StrictHostKeyChecking=no "backend-$i" "cd /local/repository/backend && GOMAXPROCS=1 PORT=80 CPU_LOAD=0 SERVER_ID=backend-$i nohup ./backend-binary > /tmp/backend.log 2>&1 &" &
+        echo "  -> Starting backend-$i (Clean)"
+        ssh -o StrictHostKeyChecking=no "backend-$i" "cd /local/repository/backend && GOMAXPROCS=1 PORT=80 SERVER_ID=backend-$i nohup ./backend-binary > /tmp/backend.log 2>&1 &" &
     done
 fi
 

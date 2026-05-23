@@ -4,7 +4,7 @@ set -eo pipefail
 
 # Update and install dependencies
 sudo apt-get update
-sudo apt-get install -y wget curl git bc hey
+sudo apt-get install -y wget curl git bc hey stress-ng
 
 # Install Go 1.24.2
 wget https://go.dev/dl/go1.24.2.linux-amd64.tar.gz
