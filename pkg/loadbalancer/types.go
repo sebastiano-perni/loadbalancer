@@ -6,12 +6,14 @@ import (
 )
 
 type Server struct {
-	ID        string
-	Address   string
-	RIF       int32
-	Latency   int64
-	IsHealthy bool
-	LastProbe time.Time
+	ID            string
+	Address       string
+	RIF           int32
+	Latency       int64
+	IsHealthy     bool
+	LastProbe     time.Time
+	CPUUsage      float64
+	CurrentWeight int
 }
 
 type ProbeResult struct {
@@ -19,13 +21,15 @@ type ProbeResult struct {
 	RIF       int32
 	Latency   int64
 	IsHealthy bool
+	CPUUsage  float64
 }
 
 type Algorithm string
 
 const (
-	AlgorithmPrequal     Algorithm = "prequal"
-	AlgorithmRoundRobin  Algorithm = "roundrobin"
+	AlgorithmPrequal    Algorithm = "prequal"
+	AlgorithmRoundRobin Algorithm = "roundrobin"
+	AlgorithmWRR        Algorithm = "wrr"
 )
 
 type Config struct {

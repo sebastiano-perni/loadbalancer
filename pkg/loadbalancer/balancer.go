@@ -2,6 +2,8 @@ package loadbalancer
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"log/slog"
 	"math/rand"
 	"net/http"
@@ -76,6 +78,7 @@ func (lb *LoadBalancer) probeAllServers() {
 			lb.probePool[srv.ID] = result
 			srv.IsHealthy = result.IsHealthy
 			srv.Latency = result.Latency
+			srv.CPUUsage = result.CPUUsage
 			lb.mutex.Unlock()
 
 			algorithm := string(lb.config.Algorithm)
@@ -93,12 +96,9 @@ func (lb *LoadBalancer) probeServer(server *Server) *ProbeResult {
 	defer cancel()
 
 	start := time.Now()
-	req, err := http.NewRequestWithContext(ctx, "GET",
-		"http://"+server.Address+lb.config.HealthCheckPath, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "http://"+server.Address+lb.config.HealthCheckPath, nil)
 	if err != nil {
-		lb.logger.Error("Failed to create probe request",
-			slog.String("server", server.ID),
-			slog.String("error", err.Error()))
+		lb.logger.Error("Failed to create probe request", slog.String("server", server.ID), slog.String("error", err.Error()))
 		return &ProbeResult{
 			Timestamp: time.Now(),
 			IsHealthy: false,
@@ -107,15 +107,29 @@ func (lb *LoadBalancer) probeServer(server *Server) *ProbeResult {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		lb.logger.Error("Probe request failed",
-			slog.String("server", server.ID),
-			slog.String("error", err.Error()))
+		lb.logger.Error("Probe request failed", slog.String("server", server.ID), slog.String("error", err.Error()))
 		return &ProbeResult{
 			Timestamp: time.Now(),
 			IsHealthy: false,
 		}
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			lb.logger.Error("Failed to close probe response body", slog.String("server", server.ID), slog.String("error", err.Error()))
+		}
+	}(resp.Body)
+
+	var healthResp struct {
+		Status   string  `json:"status"`
+		ServerID string  `json:"server_id"`
+		CPUUsage float64 `json:"cpu_usage"`
+	}
+
+	isHealthy := resp.StatusCode == http.StatusOK
+	if isHealthy {
+		_ = json.NewDecoder(resp.Body).Decode(&healthResp)
+	}
 
 	duration := time.Since(start)
 
@@ -123,7 +137,8 @@ func (lb *LoadBalancer) probeServer(server *Server) *ProbeResult {
 		Timestamp: time.Now(),
 		RIF:       atomic.LoadInt32(&server.RIF),
 		Latency:   duration.Milliseconds(),
-		IsHealthy: resp.StatusCode == http.StatusOK,
+		IsHealthy: isHealthy,
+		CPUUsage:  healthResp.CPUUsage,
 	}
 }
 
@@ -136,8 +151,46 @@ func (lb *LoadBalancer) AddServer(server *Server) {
 func (lb *LoadBalancer) SelectServer() *Server {
 	if lb.config.Algorithm == AlgorithmRoundRobin {
 		return lb.selectServerRR()
+	} else if lb.config.Algorithm == AlgorithmWRR {
+		return lb.selectServerWRR()
 	}
 	return lb.selectServerPrequal()
+}
+
+func (lb *LoadBalancer) selectServerWRR() *Server {
+	lb.mutex.Lock()
+	defer lb.mutex.Unlock()
+
+	if len(lb.servers) == 0 {
+		return nil
+	}
+
+	var best *Server
+	total := 0
+
+	for _, server := range lb.servers {
+		if !server.IsHealthy {
+			continue
+		}
+
+		weight := int((1.0 - server.CPUUsage) * 100)
+		if weight < 1 {
+			weight = 1
+		}
+
+		server.CurrentWeight += weight
+		total += weight
+
+		if best == nil || server.CurrentWeight > best.CurrentWeight {
+			best = server
+		}
+	}
+
+	if best != nil {
+		best.CurrentWeight -= total
+	}
+
+	return best
 }
 
 func (lb *LoadBalancer) selectServerRR() *Server {
