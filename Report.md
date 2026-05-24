@@ -34,10 +34,21 @@ However, this paper demonstrates that load is not what you should balance.Infact
 ## The key ideas behind its solution and its approach
 To overcome the limitations of WRR and similar algorithms, the authors introduce Prequal, which stands for Probing to Reduce Queuing and Latency, a loadbalancing policy designed to reduce the tail latency in multi-tenant datacenters.
 Since CPU utilization is not accurate, Prequal use two load signals, RIF (Request in Flight) and latency.
-The system exploits the power of d choices paradigm, which consists in  sampling d ≥ 2 servers for their load and sending the next request to the least loaded one. 
+The system exploits the power of d choices paradigm, which consists in  sampling d ≥ 2 servers for their load and sending the next request to the least loaded one.
+Prequal categorizes server in hot and cold pool, relative to an estimated RIF distribution quantile. If the entire pool is hot, it picks the server with the absolute lowest RIF to protect hard RAM boundaries. Otherwise, it picks the cold server with the lowest estimated latency.
+In order to achieve a succesful result, the design goals of prequal are:
+- The minimization of probing overheads.
+- Asynchronous probing to add minimal latency.
+- Minimization of tail latency thanks to the removal of the worst probes.
+- Limitation of RAM footprint of query processing on server replicas.
+
+
 
 
 ## The main contributions
+- The distinction between hot and cold servers, which guarantees a better load assignment thanks to dynamic classificationGlobalConnect.
+- The asynchronous probing system that keeps load metric fresh without adding delay to queries.
+- An efficient management of the pools. Prequal alternates between removing the oldest probes and removing the worst probes. This ensures that the average quality of the pool does not degrade over time.
 
 # 2. Selected Result
 
