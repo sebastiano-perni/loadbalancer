@@ -70,21 +70,39 @@ Particular attention is posed to the behaviour of the system at peak load and at
 
 # 3. Environment Setup
 
-*Note:* This section should contain enough information to allow someone else to
-reproduce *your* report. Share hardware and/or software setup relevant to your
-experiment. For example:
-
 **Hardware Environment:**
-CPU, Memory, Storage, Network, Cloud / local / cluster, Any relevant micro-architectural details
+The experiment has been conducted on the CloudLab platform, using the Utah cluster.
+More specifically, we used 14 m510 nodes, each with an Intel Xeon D-1548 CPU (8 cores, 16 threads) and 64 GB of RAM.
+Of the 14 nodes, 1 was used as load generator, 1 as telemetry server (running Prometheus and Grafana), 2 as load
+balancers and the remaining ones as backend servers.
 
 **Software Environment**
-OS version, Kernel version, Compiler version, Libraries, Dependencies, Paper artifact used (Yes/No; version/commit hash)
+The experiment is based on a fork of the provided Prequal codebase, which is available at
+this [link](https://github.com/omarshaarawi/loadbalancer).
+The forked repository adds the necessary scripts for running the experiment and for collecting the results, as well as
+the code for the further exploration described in section 5.
+The software environment is based on Ubuntu 22.04.
+The included scripts install the necessary dependencies, which include:
+
+- Go 1.24.1
+- Docker (latest version)
+- Prometheus (latest docker image)
+- Grafana (latest docker image)
+- Utility tools from apt: wget, curl, git, bc, hey, stress-ng
 
 **Configuration Parameters:**
 
-- Workload configuration
-- Dataset
-- Runtime parameters and flags
+The CloudLab profile allows for the following parameters to be configured:
+
+- Number of backend servers (default: 10)
+- Type of backend servers (default: m510)
+
+Meanwhile, the setup scripts allow for the following parameters to be configured:
+
+- Number of antagonist servers (default: 3)
+- Load of antagonist servers (default: 60% CPU utilization with stress-ng)
+- Duration of the load test (default: 180 seconds per phase)
+
 
 **Deviations from the Original Setup:**
 
@@ -103,9 +121,9 @@ If something was **missing in the original paper**, state it. For example:
 
 # 4. Experiment Result
 
-> Explain how your experiment was conducted and then what results you acquired. 
-Afterwards, compare your results with those of the paper and state your
-takeaways.
+> Explain how your experiment was conducted and then what results you acquired.
+> Afterwards, compare your results with those of the paper and state your
+> takeaways.
 
 Step-by-step description:
 
