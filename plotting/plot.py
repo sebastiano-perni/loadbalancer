@@ -106,18 +106,18 @@ axes[1].grid(True, linestyle='--', alpha=0.6)
 
 # Graph 3: Latency
 cols_to_plot = ['prequal p50', f'{tested_algo} p50', 'prequal p90', f'{tested_algo} p90', 'prequal p99',
-                f'{tested_algo} p99']
+                f'{tested_algo} p99', 'prequal p99.9',f'{tested_algo} p99.9']
 linestyles = {'prequal p50': '-', f'{tested_algo} p50': '-', 'prequal p90': '--', f'{tested_algo} p90': '--',
-              'prequal p99': ':', f'{tested_algo} p99': ':'}
+              'prequal p99': ':', f'{tested_algo} p99': ':', 'prequal p99.9': '-.', f'{tested_algo} p99.9': '-.'}
 colors = {'prequal p50': '#1f77b4', f'{tested_algo} p50': '#ff7f0e', 'prequal p90': '#1f77b4',
-          f'{tested_algo} p90': '#ff7f0e', 'prequal p99': '#1f77b4', f'{tested_algo} p99': '#ff7f0e'}
+          f'{tested_algo} p90': '#ff7f0e', 'prequal p99': '#1f77b4', f'{tested_algo} p99': '#ff7f0e', 'prequal p99.9': '#1f77b4', f'{tested_algo} p99.9': '#ff7f0e'}
 
 for col in cols_to_plot:
     if col in df_latency.columns:
         axes[2].plot(df_latency['Elapsed_Min'], df_latency[col], label=col, linestyle=linestyles.get(col, '-'),
                      color=colors.get(col))
 
-axes[2].set_title('Request Latency (p50, p90, p99)')
+axes[2].set_title('Request Latency (p50, p90, p99, p99.9)')
 axes[2].set_ylabel('Latency (ms)')
 
 # Aggiorniamo l'etichetta dell'asse X
@@ -126,8 +126,6 @@ axes[2].set_xlabel('Minutes passed')
 axes[2].legend(fontsize='small')
 axes[2].grid(True, linestyle='--', alpha=0.6)
 
-# RIMOSSO: axes[2].xaxis.set_major_formatter(...) -> Non serve più!
-# RIMOSSO: axes[2].tick_params(rotation=45) -> I numeri semplici si leggono bene dritti
 
 plt.tight_layout()
 

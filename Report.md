@@ -180,6 +180,9 @@ In this project you are required to also explore a research question of your own
 Discuss which approach you take, and what you explored. Explain what was your
 motivation and importance of your question.
 
+In the original artifact the workload difference between two requests can be at maximum 50% with an average of 25%. Thus, we questioned ourselves about what could happen with a type of workload which is extremely heterogenous in both WRR and Prequal.
+What we expect is to see worst performances on tail latency by WRR, since the unlucky servers to which are assigned particularly heavy requests will be extremely penalized. While for average latency we don't expext significative variations.
+
 ## 5.1. Methodology and Result
 
 Report the experiment you designed for answering the question and share the
@@ -190,6 +193,9 @@ Include:
 - Graph(s) or table(s)
 - How the experiment was conducted (share the details)
 - What did you discover?
+
+This experiement remarked again how prequal is effective in managing tail latency, infact we can see a speedup of rouglhy 30x between the 99th percentile of prequal and the 99th percentile of WRR, in case of heavy CPU load.
+It's also interesting to observe that, in case of heavy CPU load, prequal tail latency (at the 99.9th percentile) resemble a sort of "slow" inverse exponential, starting from a level A and reaching a asymptotically a level B, where B < A.
 
 # 6. Reproducibility Assessment of the Paper
 
