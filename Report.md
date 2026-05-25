@@ -54,17 +54,18 @@ In order to achieve a succesful result, the design goals of prequal are:
 
 Mention which result of the paper you are reproducing, and explain its importance.
 
-For example:
 
-> “Figure 1 shows that method A improves throughput by 35% over method B under workload *W*. This experiment shows that paper can effectively overcome the motivated challenge.”
+The main result of the paper we would like to reproduce is the comparison between Prequal and WRR in the case of a multi-server system. In particular we would like to highlight the differences in the tail latency, the rate of requests and their latency for both the algorithms.
+Particular attention is posed to the behaviour of the system at peak load and at tail latency. This is important because one of the primary aim of Prequal is to reduce tail latency and error rates, to allow production systems (such as Youtube) to run at much higher utilization than what could be reached with other types of algorithms.
+
 
 <center>
   <img
-    alt="The figure shows that method A improves throughput compared to method B"
-    src="figures/one_bar.png"
+    alt="Figure 1: This graphs shows the improvement in tail latency achieved in using Prequal compared to WRR"
+    src="sources/figure6_original_paper.png"
     style="width:30%;"
     />
-  <p>Figure 1: The figure shows that method A improves throughput compared to method B</p>
+  <p>Figure 1: This graphs shows the improvement in tail latency achieved in using Prequal compared to WRR (figure 6 of the original paper)</p>
 </center>
 
 # 3. Environment Setup

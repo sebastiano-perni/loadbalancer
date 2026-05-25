@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 
 parser = argparse.ArgumentParser(description='Plot performance metrics.')
-parser.add_argument('-r', '--rate-file', default='Request_Rate.csv', type=str, help='Request Rate CSV file')
-parser.add_argument('-a', '--active-file', default='Active_Requests.csv', type=str, help='Active Requests CSV file')
-parser.add_argument('-l', '--latency-file', default='Request_Latency.csv', type=str, help='Request Latency CSV file')
+parser.add_argument('-r', '--rate-file', default='Request_Rate_Preq_WRR.csv', type=str, help='Request Rate CSV file')
+parser.add_argument('-a', '--active-file', default='Active_Requests_Preq_WRR.csv', type=str, help='Active Requests CSV file')
+parser.add_argument('-l', '--latency-file', default='Request_Latency_Preq_WRR.csv', type=str, help='Request Latency CSV file')
 args = parser.parse_args()
 
 # Define your file names here
