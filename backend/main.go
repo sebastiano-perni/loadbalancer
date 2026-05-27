@@ -74,10 +74,20 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		work := 1000 + int(rand.ExpFloat64()*1500)
-		if work > 10000 {
-			work = 10000
+		var work int
+		if workParam := r.URL.Query().Get("work"); workParam != "" {
+			if parsedWork, err := strconv.Atoi(workParam); err == nil {
+				work = parsedWork
+			}
 		}
+
+		if work == 0 {
+			work = 1000 + int(rand.ExpFloat64()*1500)
+			if work > 10000 {
+				work = 10000
+			}
+		}
+
 		for i := range work {
 			hash := sha256.Sum256([]byte(fmt.Sprintf("%d-%d", time.Now().UnixNano(), i)))
 			_ = hex.EncodeToString(hash[:])
