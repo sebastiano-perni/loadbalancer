@@ -1,7 +1,7 @@
 # Replicating: "The Title of Paper You Selected From The List"
 
 **Team Members:**  
-Sebastiano Perni (email address);  
+Sebastiano Perni (sebastiano.perni@mail.polimi.it);  
 Dmitrii Meshcheriakov (email address);  
 Paolo Salvi (email address)
 
@@ -14,7 +14,7 @@ Stephen M. Rumble, Google (YouTube); Aaron Archer, Google Research
 
 
 **Project:**
-- Link to the github repository: https://github.com/sebastiano-perni/loadbalancer
+- Link to the GitHub repository: https://github.com/sebastiano-perni/loadbalancer
 
 ---
 
@@ -59,65 +59,75 @@ The main result of the paper we would like to reproduce is the comparison betwee
 Particular attention is posed to the behaviour of the system at peak load and at tail latency. This is important because one of the primary aim of Prequal is to reduce tail latency and error rates, to allow production systems (such as Youtube) to run at much higher utilization than what could be reached with other types of algorithms.
 
 
-<center>
+<div style="text-align: center;">
   <img
     alt="Figure 1: This graphs shows the improvement in tail latency achieved in using Prequal compared to WRR"
     src="sources/figure6_original_paper.png"
     style="width:30%;"
     />
   <p>Figure 1: This graphs shows the improvement in tail latency achieved in using Prequal compared to WRR (figure 6 of the original paper)</p>
-</center>
+</div>
 
 # 3. Environment Setup
 
-**Hardware Environment:**
-The experiment has been conducted on the CloudLab platform, using the Utah cluster.
-More specifically, we used 14 m510 nodes, each with an Intel Xeon D-1548 CPU (8 cores, 16 threads) and 64 GB of RAM.
-Of the 14 nodes, 1 was used as load generator, 1 as telemetry server (running Prometheus and Grafana), 2 as load
-balancers and the remaining ones as backend servers.
+## Hardware Environment
 
-**Software Environment**
+The experiment has been conducted on the CloudLab platform, using the Utah cluster. More specifically, we used 14 m510
+nodes, each with an Intel Xeon D-1548 CPU (8 cores, 16 threads) and 64 GB of RAM. Of the 14 nodes, 1 was used as a load
+generator, 1 as a telemetry server (running Prometheus and Grafana), 2 as load balancers, and the remaining ones as
+backend servers.
+
+## Software Environment
+
 The experiment is based on a fork of the provided Prequal codebase, which is available at
-this [link](https://github.com/omarshaarawi/loadbalancer).
-The forked repository adds the necessary scripts for running the experiment and for collecting the results, as well as
-the code for the further exploration described in section 5.
-The software environment is based on Ubuntu 22.04.
-The included scripts install the necessary dependencies, which include:
+this [link](https://github.com/omarshaarawi/loadbalancer). The forked repository adds the necessary scripts for running
+the experiment and collecting results, as well as code for the further exploration described in section 5.
+
+The software environment is based on Ubuntu 22.04. The included scripts install the following dependencies:
 
 - Go 1.24.1
 - Docker (latest version)
-- Prometheus (latest docker image)
-- Grafana (latest docker image)
-- Utility tools from apt: wget, curl, git, bc, hey, stress-ng
+- Prometheus (latest Docker image)
+- Grafana (latest Docker image)
+- Utility tools: wget, curl, git, bc, hey, stress-ng
 
-**Configuration Parameters:**
+## Configuration Parameters
 
-The CloudLab profile allows for the following parameters to be configured:
+The CloudLab profile allows the following parameters to be configured:
 
 - Number of backend servers (default: 10)
 - Type of backend servers (default: m510)
 
-Meanwhile, the setup scripts allow for the following parameters to be configured:
+The setup scripts allow the following parameters to be configured:
 
 - Number of antagonist servers (default: 3)
 - Load of antagonist servers (default: 60% CPU utilization with stress-ng)
 - Duration of the load test (default: 180 seconds per phase)
 
+## Deviations from the Original Setup
 
-**Deviations from the Original Setup:**
+- **Deviation:** The paper evaluates Prequal on YouTube's production infrastructure, which consists of thousands of
+  heterogeneous machines with organic, unpredictable background antagonist workloads. This experiment instead uses a
+  10-node CloudLab cluster, simulating antagonists via stress-ng on a fixed subset of nodes.
 
-Clearly describe any difference between papers and your experiment environment.
+  **Motivation:** Reproducing the Google environment is infeasible. Our simplified environment provides enough
+  statistical evidence to demonstrate Prequal's effectiveness.
 
-- Hardware differences
-- Software version differences
-- Dataset substitutions
-- Unavailable components
+- **Deviation:** Prequal's original design implements an asynchronous, bounded probe pool of size 16 with advanced
+  eviction rules (age, reuse limit, and highest load) to decouple probing from the critical path and maintain O(1)
+  overhead. This experiment instead uses a background timer that synchronously polls all N servers and updates a global
+  map.
 
-Explain why these deviations were necessary.
+  **Motivation:** While O(N) probing is problematic in datacenters due to massive scale, in our micro-cluster of 10
+  nodes, the overhead is negligible and the implementation is simpler.
 
-If something was **missing in the original paper**, state it. For example:
+- **Deviation:** Prequal's original design calculates the "hot/cold" threshold (Q_RIF) based on an estimated global
+  distribution of RIF across all replicas and estimates request latency using the median latency of requests that
+  arrived at a similar RIF level. This experiment instead compares only d=2 servers, classifies them as hot/cold, and
+  estimates latency via a /health endpoint.
 
-> The paper does not specify X. We assumed Y (or explored range *a* to *b*).
+  **Motivation:** While the original design is necessary for large-scale datacenters, our simplified implementation with
+  10 nodes is enough to demonstrate Prequal's effectiveness.
 
 # 4. Experiment Result
 
