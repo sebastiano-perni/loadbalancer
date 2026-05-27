@@ -9,7 +9,7 @@ print_usage() {
     cat << EOF
 Usage: $0 [OPTIONS]
 
-Run side-by-side comparison test of Prequal vs Round-Robin.
+Run side-by-side comparison test of Prequal vs Other.
 
 OPTIONS:
     -d, --duration SEC      Duration per load level (default: 120)
@@ -51,7 +51,7 @@ check_services() {
         exit 1
     fi
     if ! curl -s "http://${RR_HOST}/health" > /dev/null 2>&1; then
-        echo "Error: Round-Robin load balancer not responding on port 8081"
+        echo "Error: Other load balancer not responding on port 8081"
         echo "Start services with: docker-compose up -d"
         exit 1
     fi
@@ -84,45 +84,48 @@ check_services
 echo ""
 echo "========================================="
 echo "  Side-by-Side Algorithm Comparison"
-echo "  Prequal (8080) vs Round-Robin (8081)"
+echo "  Prequal (8080) vs Other (8081)"
 echo "========================================="
 echo "Duration per level: ${DURATION}s"
 echo ""
 
 echo "Determining baseline capacity..."
 echo "Running calibration test (30s on Prequal)..."
-BASELINE=$(hey -z 30s -q 100 "http://${RR_HOST}" 2>&1 | grep "Requests/sec:" | awk '{print $2}')
+BASELINE=$(hey -z 30s -c 50 -q 2 "http://${PREQUAL_HOST}?work=2500" 2>&1 | grep "Requests/sec:" | awk '{print $2}')
 echo "Baseline capacity: ${BASELINE} req/sec"
 echo ""
 
+WORKERS=50
 LEVELS=(0.75 0.83 0.93 1.03 1.14 1.27 1.41 1.57 1.74)
 LEVEL_NAMES=("75%" "83%" "93%" "103%" "114%" "127%" "141%" "157%" "174%")
 
 for i in "${!LEVELS[@]}"; do
     level=${LEVELS[$i]}
     name=${LEVEL_NAMES[$i]}
-    qps=$(echo "$BASELINE * $level" | bc -l | awk '{printf "%.0f", $1}')
+    TOTAL_QPS=$(echo "$BASELINE * $level" | bc -l | awk '{printf "%.0f", $1}')
+    QPS_PER_WORKER=$((TOTAL_QPS / WORKERS))
+    if [ "$QPS_PER_WORKER" -lt 1 ]; then QPS_PER_WORKER=1; fi
 
     # Calculate half duration for the sequential test
     HALF_DURATION=$((DURATION / 2))
 
     echo "========================================="
     echo "Step $((i+1))/9: Load Level $name"
-    echo "Target: ${qps} req/sec per algorithm"
+    echo "Target: ${TOTAL_QPS} req/sec per algorithm"
     echo "========================================="
     echo ""
 
-    echo "--- Phase 1: Round-Robin (${HALF_DURATION}s) ---"
-    hey -z ${HALF_DURATION}s -q $qps http://${RR_HOST} > /tmp/rr_${i}.txt 2>&1
+    echo "--- Phase 1: Other (${HALF_DURATION}s) ---"
+    hey -c $WORKERS -z ${HALF_DURATION}s -q $QPS_PER_WORKER "http://${RR_HOST}?work=2500" > /tmp/rr_${i}.txt 2>&1
 
     echo "Cooldown for 10 seconds..."
     sleep 10
 
     echo "--- Phase 2: Prequal (${HALF_DURATION}s) ---"
-    hey -z ${HALF_DURATION}s -q $qps http://${PREQUAL_HOST} > /tmp/prequal_${i}.txt 2>&1
+    hey -c $WORKERS -z ${HALF_DURATION}s -q $QPS_PER_WORKER "http://${PREQUAL_HOST}?work=2500" > /tmp/prequal_${i}.txt 2>&1
 
     echo ""
-    echo "--- Round-Robin Results ---"
+    echo "--- Other Results ---"
     grep -E "Requests/sec:|p50|p99|p99.9" /tmp/rr_${i}.txt | head -5
 
     echo ""
