@@ -91,7 +91,7 @@ echo ""
 
 echo "Determining baseline capacity..."
 echo "Running calibration test (30s on Prequal)..."
-BASELINE=$(hey -z 30s -c 50 -q 2 "http://${PREQUAL_HOST}?work=2500" 2>&1 | grep "Requests/sec:" | awk '{print $2}')
+BASELINE=$(hey -z 30s -q 100 "http://${PREQUAL_HOST}?work=2500" 2>&1 | grep "Requests/sec:" | awk '{print $2}')
 echo "Baseline capacity: ${BASELINE} req/sec"
 echo ""
 
