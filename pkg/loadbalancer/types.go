@@ -30,6 +30,7 @@ const (
 	AlgorithmPrequal    Algorithm = "prequal"
 	AlgorithmRoundRobin Algorithm = "roundrobin"
 	AlgorithmWRR        Algorithm = "wrr"
+	AlgorithmRandom     Algorithm = "random"
 )
 
 type Config struct {
