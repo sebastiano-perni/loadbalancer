@@ -155,6 +155,8 @@ func (lb *LoadBalancer) SelectServer() *Server {
 		return lb.selectServerWRR()
 	} else if lb.config.Algorithm == AlgorithmRandom {
 		return lb.selectServerRandom()
+	} else if lb.config.Algorithm == AlgorithmLeastLoaded {
+		return lb.selectServerLeastLoaded()
 	}
 	return lb.selectServerPrequal()
 }
@@ -215,6 +217,32 @@ func (lb *LoadBalancer) selectServerRandom() *Server {
 	}
 
 	return healthyServers[rand.Intn(len(healthyServers))]
+}
+
+func (lb *LoadBalancer) selectServerLeastLoaded() *Server {
+	lb.mutex.RLock()
+	defer lb.mutex.RUnlock()
+
+	if len(lb.servers) == 0 {
+		return nil
+	}
+
+	var best *Server
+	var minLoad int32
+
+	for _, server := range lb.servers {
+		if !server.IsHealthy {
+			continue
+		}
+
+		load := atomic.LoadInt32(&server.RIF)
+		if best == nil || load < minLoad {
+			best = server
+			minLoad = load
+		}
+	}
+
+	return best
 }
 
 func (lb *LoadBalancer) selectServerRR() *Server {

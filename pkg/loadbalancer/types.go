@@ -27,10 +27,11 @@ type ProbeResult struct {
 type Algorithm string
 
 const (
-	AlgorithmPrequal    Algorithm = "prequal"
-	AlgorithmRoundRobin Algorithm = "roundrobin"
-	AlgorithmWRR        Algorithm = "wrr"
-	AlgorithmRandom     Algorithm = "random"
+	AlgorithmPrequal     Algorithm = "prequal"
+	AlgorithmRoundRobin  Algorithm = "roundrobin"
+	AlgorithmWRR         Algorithm = "wrr"
+	AlgorithmRandom      Algorithm = "random"
+	AlgorithmLeastLoaded Algorithm = "leastloaded"
 )
 
 type Config struct {

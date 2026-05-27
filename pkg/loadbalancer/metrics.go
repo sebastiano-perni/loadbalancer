@@ -44,10 +44,10 @@ func NewMetrics() *Metrics {
 		),
 	}
 
-	prometheus.MustRegister(m.requestDuration)
-	prometheus.MustRegister(m.activeRequests)
-	prometheus.MustRegister(m.serverHealth)
-	prometheus.MustRegister(m.serverRIF)
+	_ = prometheus.Register(m.requestDuration)
+	_ = prometheus.Register(m.activeRequests)
+	_ = prometheus.Register(m.serverHealth)
+	_ = prometheus.Register(m.serverRIF)
 
 	return m
 }

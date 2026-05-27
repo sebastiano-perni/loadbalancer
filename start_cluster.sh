@@ -4,7 +4,7 @@
 SECOND_LB_ALGO=${1:-roundrobin}
 
 # Supported algorithms (add more here in the future)
-VALID_ALGOS=("roundrobin" "wrr" "random")
+VALID_ALGOS=("roundrobin" "wrr" "random" "leastloaded")
 
 if [[ ! " ${VALID_ALGOS[*]} " == *" $SECOND_LB_ALGO "* ]]; then
     echo "Error: Invalid load balancing algorithm '$SECOND_LB_ALGO'."
