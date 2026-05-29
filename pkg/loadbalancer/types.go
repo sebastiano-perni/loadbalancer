@@ -13,7 +13,7 @@ type Server struct {
 	IsHealthy     bool
 	LastProbe     time.Time
 	CPUUsage      float64
-	CurrentWeight int
+	CurrentWeight int32
 }
 
 type ProbeResult struct {

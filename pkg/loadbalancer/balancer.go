@@ -162,36 +162,38 @@ func (lb *LoadBalancer) SelectServer() *Server {
 }
 
 func (lb *LoadBalancer) selectServerWRR() *Server {
-	lb.mutex.Lock()
-	defer lb.mutex.Unlock()
+	lb.mutex.RLock()
+	defer lb.mutex.RUnlock()
 
 	if len(lb.servers) == 0 {
 		return nil
 	}
 
 	var best *Server
-	total := 0
+	var bestCW int32
+	var total int32
 
 	for _, server := range lb.servers {
 		if !server.IsHealthy {
 			continue
 		}
 
-		weight := int((1.0 - server.CPUUsage) * 100)
+		weight := int32((1.0 - server.CPUUsage) * 100)
 		if weight < 1 {
 			weight = 1
 		}
 
-		server.CurrentWeight += weight
+		cw := atomic.AddInt32(&server.CurrentWeight, weight)
 		total += weight
 
-		if best == nil || server.CurrentWeight > best.CurrentWeight {
+		if best == nil || cw > bestCW {
 			best = server
+			bestCW = cw
 		}
 	}
 
 	if best != nil {
-		best.CurrentWeight -= total
+		atomic.AddInt32(&best.CurrentWeight, -total)
 	}
 
 	return best
