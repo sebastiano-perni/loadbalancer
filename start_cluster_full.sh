@@ -32,7 +32,7 @@ echo "Starting Backend Servers..."
 for i in $(seq 1 "$BACKEND_COUNT"); do
     echo "  -> Starting 10 instances on backend-$i (Clean, 10% CPU limit)"
     # Start 10 backends on ports 8000-8009
-    ssh -o StrictHostKeyChecking=no "backend-$i" "cd /local/repository/backend && for p in \$(seq 8000 8009); do GOMAXPROCS=1 PORT=\$p SERVER_ID=backend-$i-\$p systemd-run --user --scope -p CPUQuota=10% ./backend-binary > /tmp/backend_$p.log 2>&1 & done" &
+    ssh -o StrictHostKeyChecking=no "backend-$i" "cd /local/repository/backend && for p in \$(seq 8000 8009); do PORT=$p SERVER_ID=backend-$i-$p nohup cpulimit -l 10 -- ./backend-binary > /tmp/backend_$p.log 2>&1 &" &
 done
 
 echo "Starting Load Balancers..."
