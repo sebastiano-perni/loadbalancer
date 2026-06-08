@@ -7,7 +7,7 @@ if [ "$BACKEND_COUNT" -eq 0 ]; then BACKEND_COUNT=10; fi
 
 echo "Stopping Backend Servers and cleaning logs ($BACKEND_COUNT nodes)..."
 for i in $(seq 1 "$BACKEND_COUNT"); do
-    ssh -o StrictHostKeyChecking=no "backend-$i" "pkill -f backend-binary; rm -f /tmp/backend.log" 2>/dev/null
+    ssh -o StrictHostKeyChecking=no "backend-$i" "pkill -f backend-binary; sudo pkill -f stress-ng; rm -f /tmp/backend.log" 2>/dev/null
 done
 echo "  -> Backends stopped."
 
