@@ -1,9 +1,6 @@
 #!/bin/bash
 # Compare Prequal against a second load balancing algorithm.
 # Run from the "client" node after start_cluster.sh or start_cluster_full.sh.
-#
-# Each load level is split in half: traffic is sent to one LB for the first
-# half and to the other LB for the second half.
 
 set -e
 
@@ -15,7 +12,6 @@ WORKERS="${WORKERS:-50}"
 DURATION="${DURATION:-120}"
 COOLDOWN="${COOLDOWN:-10}"
 CALIB_DURATION="${CALIB_DURATION:-30}"
-CALIB_QPS="${CALIB_QPS:-100}"
 BASELINE="${BASELINE:-}"
 LEVELS_DEFAULT="0.75 0.83 0.93 1.03 1.14 1.27 1.41 1.57 1.74"
 LEVELS_STR="${LEVELS:-$LEVELS_DEFAULT}"
@@ -40,7 +36,6 @@ OPTIONS:
       --second-host H:P      Second LB host:port (default: ${SECOND_HOST})
       --second-name NAME     Label for the second algorithm (default: ${SECOND_NAME})
       --calib-duration SEC   Calibration duration (default: ${CALIB_DURATION})
-      --calib-qps N          Calibration QPS target (default: ${CALIB_QPS})
       --baseline N           Skip calibration and use this baseline req/sec
       --output-dir DIR       Where to write hey output files (default: ${OUTPUT_DIR})
   -h, --help                 Show this help
@@ -60,7 +55,6 @@ while [[ $# -gt 0 ]]; do
         --second-host)      SECOND_HOST="$2";    shift 2 ;;
         --second-name)      SECOND_NAME="$2";    shift 2 ;;
         --calib-duration)   CALIB_DURATION="$2"; shift 2 ;;
-        --calib-qps)        CALIB_QPS="$2";      shift 2 ;;
         --baseline)         BASELINE="$2";       shift 2 ;;
         --output-dir)       OUTPUT_DIR="$2";     shift 2 ;;
         -h|--help)          print_usage; exit 0 ;;
