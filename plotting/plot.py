@@ -119,6 +119,7 @@ for col in cols_to_plot:
 
 axes[2].set_title('Request Latency (p50, p90, p99, p99.9)')
 axes[2].set_ylabel('Latency (ms)')
+axes[2].set_yscale('log')
 
 # Aggiorniamo l'etichetta dell'asse X
 axes[2].set_xlabel('Minutes passed')
@@ -127,7 +128,6 @@ axes[2].legend(fontsize='small')
 axes[2].grid(True, linestyle='--', alpha=0.6)
 
 
-plt.tight_layout()
 
 # Save and show
 plt.savefig('performance_metrics.png', dpi=300)
