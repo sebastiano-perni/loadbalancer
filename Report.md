@@ -56,7 +56,9 @@ Mention which result of the paper you are reproducing, and explain its importanc
 
 
 The main result of the paper we would like to reproduce is the comparison between Prequal and WRR in the case of a multi-server system. In particular we would like to highlight the differences in the tail latency, the rate of requests and their latency for both the algorithms.
-Particular attention is posed to the behaviour of the system at peak load and at tail latency. This is important because one of the primary aim of Prequal is to reduce tail latency and error rates, to allow production systems (such as Youtube) to run at much higher utilization than what could be reached with other types of algorithms.
+To properly evaluate the behavior of the system, we reproduce the load ramp experiment. The aggregate CPU load begins at 75% of the allocation and is incrementally raised in 8 multiplicative steps of 10/9. This progression yields the following specific load levels: 0.75x, 0.83x, 0.93x, 1.03x, 1.14x, 1.27x, 1.41x, 1.57x, and 1.74x of the allocated CPU.
+
+Particular attention is given to the behaviour of the system at peak load and at the tail latency. This is important because one of the primary aim of Prequal is to reduce tail latency and error rates, to allow production systems (such as Youtube) to run at much higher utilization than what could be reached with other types of algorithms. Therefore we expect that, the after the percentage of CPU utilization exceed the 100%, the behaviour of the two algorithms diverge, in particular looking at the latency of the last percentiles, as is possible to observe in Figure 1.
 
 
 <div style="text-align: center;">
@@ -138,14 +140,20 @@ The setup scripts allow the following parameters to be configured:
 Step-by-step description:
 
 1. Execution procedure
-1. Measurement method
-1. Number of runs
+1. Measurement method (Grafana, Prometheus)
+1. Number of runs 
 1. Statistical treatment (mean, median, CI, etc.)
 
 Also Describe:
 
 - How did you ensure correctness (did you check also other metrics to make sure the experiment is running correctly?)
-- Did you do any debugging? Discuss issues you faced and how you overcame them (if applicable consider allocating a subsection for this item) 
+- Did you do any debugging? Discuss issues you faced and how you overcame them (if applicable consider allocating a subsection for this item)
+ (Grafana + Prometheus, Script for installing stuff on the servers (SUDO, ...),  )
+ Changes from the original REPO:
+ Script for running
+ Load
+ Split in two phases
+ Bug in the computation of the baseline
 
 Share your result and compare them with the paper's. Then discuss your takeaways.
 
@@ -190,7 +198,26 @@ In this project you are required to also explore a research question of your own
 Discuss which approach you take, and what you explored. Explain what was your
 motivation and importance of your question.
 
-In the original artifact the workload difference between two requests can be at maximum 50% with an average of 25%. Thus, we questioned ourselves about what could happen with a type of workload which is extremely heterogenous in both WRR and Prequal.
+In the original paper the workload is fixed, while in the original artifact the workload difference between two requests can be at maximum 50% with an average of 25%. Thus, we questioned ourselves about what could happen with a type of workload which is extremely heterogenous in both WRR and Prequal.
+In practice we changed the workload assigned to each request in this way:
+
+Base case:
+```
+work = 2500
+```
+
+New version:
+```
+if work == 0 {
+			work = 1000 + int(rand.ExpFloat64()*1500)
+			if work > 10000 {
+				work = 10000
+			}
+		}
+```
+
+Note that the work correspond to the execution of a SHA 256 algorithm.
+
 What we expect is to see worst performances on tail latency by WRR, since the unlucky servers to which are assigned particularly heavy requests will be extremely penalized. While for average latency we don't expext significative variations.
 
 ## 5.1. Methodology and Result
@@ -212,8 +239,8 @@ It's also interesting to observe that, in case of heavy CPU load, prequal tail l
 Evaluate the paper itself:
 
 - Was the methodology clearly described?
-- Was the artifact usable?
-- How difficult was reproduction?
+- Was the artifact usable? 
+- How difficult was reproduction? 
 
 # 7. Conclusion
 
