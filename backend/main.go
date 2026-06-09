@@ -82,9 +82,9 @@ func main() {
 		}
 
 		if work == 0 {
-			work = 1000 + int(rand.ExpFloat64()*1500)
-			if work > 10000 {
-				work = 10000
+			work = 1000 + int(rand.ExpFloat64()*4000)
+			if work > 15000 {
+				work = 15000
 			}
 		}
 
