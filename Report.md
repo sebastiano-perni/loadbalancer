@@ -65,7 +65,7 @@ Particular attention is given to the behaviour of the system at peak load and at
   <img
     alt="Figure 1: This graphs shows the improvement in tail latency achieved in using Prequal compared to WRR"
     src="sources/figure6_original_paper.png"
-    style="width:30%;"
+    style="width:50%;"
     />
   <p>Figure 1: This graphs shows the improvement in tail latency achieved in using Prequal compared to WRR (figure 6 of the original paper)</p>
 </div>
@@ -167,24 +167,6 @@ number or percentage).
 
 For example:
 
-<center>
-  <div style="display:inline-block; width:30%;">
-    <img
-      alt="The figure shows that method A improves throughput compared to method B"
-      src="figures/one_bar.png"
-      style="width:100%"
-      />
-    <p>Figure 2: The figure shows that method A improves throughput compared to method B</p>
-  </div>
-  <div style="display:inline-block; width:30%; padding-left: 1em">
-    <img
-      alt="Our reproduction of Figure 1 shows results with the similar trend as claimed by the paper"
-      src="figures/two_bar.png"
-      style="width:100%"
-      />
-    <p>Figure 3: Our reproduction of Figure 1 shows results with the similar trend as claimed by the paper</p>
-  </div>
-</center>
 
 > **Reminder:** the goal is not achieve the exact results of the paper, but to do a rigorous experiment with similar assumptions from the source paper and gain insight. The insight can be correctness of work, failure to reproduce same results, or even infeasibility of doing such experiment for interesting reasons.
 
@@ -199,24 +181,7 @@ Discuss which approach you take, and what you explored. Explain what was your
 motivation and importance of your question.
 
 In the original paper the workload is fixed, while in the original artifact the workload difference between two requests can be at maximum 50% with an average of 25%. Thus, we questioned ourselves about what could happen with a type of workload which is extremely heterogenous in both WRR and Prequal.
-In practice we changed the workload assigned to each request in this way:
 
-Base case:
-```
-work = 2500
-```
-
-New version:
-```
-if work == 0 {
-			work = 1000 + int(rand.ExpFloat64()*1500)
-			if work > 10000 {
-				work = 10000
-			}
-		}
-```
-
-Note that the work correspond to the execution of a SHA 256 algorithm.
 
 What we expect is to see worst performances on tail latency by WRR, since the unlucky servers to which are assigned particularly heavy requests will be extremely penalized. While for average latency we don't expext significative variations.
 
@@ -231,7 +196,51 @@ Include:
 - How the experiment was conducted (share the details)
 - What did you discover?
 
-This experiement remarked again how prequal is effective in managing tail latency, infact we can see a speedup of rouglhy 30x between the 99th percentile of prequal and the 99th percentile of WRR, in case of heavy CPU load.
+In practice the workload is assigned in this way:
+
+Original artifact:
+```
+work = 1000 + rand.IntN(501)
+```
+
+Paper:
+```
+work = 2500
+```
+
+First experiment:
+```
+if work == 0 {
+			work = 1000 + int(rand.ExpFloat64()*1500)
+			if work > 10000 {
+				work = 10000
+			}
+		}
+```
+
+Second experiment:
+```
+if work == 0 {
+			work = 1000 + int(rand.ExpFloat64()*4000)
+			if work > 15000 {
+				work = 15000
+			}
+		}
+```
+
+Note that the work correspond to the execution of a SHA 256 algorithm.
+The difference between the first and the second experiment is that the workload is more variable and more heavy distributed towards the tail, simulating a case of very heterogenous workload as is possible to see in the image. 
+
+<div style="text-align: center;">
+  <img
+    alt="Figure 3: Comparison between the distribution of the workloads used in the two experiments"
+    src="sources/workloads_distribution.png"
+    style="width:60%;"
+    />
+  <p>Figure 3: Comparison between the distribution of the workloads used in the two experiments</p>
+</div>
+
+This experiement remarked again how prequal is effective in managing tail latency.
 It's also interesting to observe that, in case of heavy CPU load, prequal tail latency (at the 99.9th percentile) resemble a sort of "slow" inverse exponential, starting from a level A and reaching a asymptotically a level B, where B < A.
 
 # 6. Reproducibility Assessment of the Paper

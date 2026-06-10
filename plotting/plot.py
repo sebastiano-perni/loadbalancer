@@ -1,32 +1,50 @@
 import argparse
-
+import glob
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-parser = argparse.ArgumentParser(description='Plot performance metrics.')
-parser.add_argument('-r', '--rate-file', default='Request_Rate_Preq_WRR.csv', type=str, help='Request Rate CSV file')
-parser.add_argument('-a', '--active-file', default='Active_Requests_Preq_WRR.csv', type=str, help='Active Requests CSV file')
-parser.add_argument('-l', '--latency-file', default='Request_Latency_Preq_WRR.csv', type=str, help='Request Latency CSV file')
+#argomenti da riga di comando
+parser = argparse.ArgumentParser(description='Plot performance metrics da una cartella specifica.')
+parser.add_argument('-d', '--dir', type=str, required=True, 
+                    help='Percorso della cartella contenente i file CSV (es. RR_2500, WRR_exp_load)')
 args = parser.parse_args()
 
-# Define your file names here
-rate_file = str(args.rate_file)
-active_file = str(args.active_file)
-latency_file = str(args.latency_file)
+# Funzione helper per trovare il file corretto in base al prefisso
+def get_file_by_prefix(directory, prefix):
+    search_pattern = os.path.join(directory, f"{prefix}*")
+    matched_files = glob.glob(search_pattern)
+    if not matched_files:
+        raise FileNotFoundError(f"Errore: Nessun file che inizia con '{prefix}' trovato nella cartella '{directory}'")
+    return matched_files[0]
 
+# Identificazione dinamica dei file nella cartella selezionata
+try:
+    rate_file = get_file_by_prefix(args.dir, 'rate-')
+    active_file = get_file_by_prefix(args.dir, 'act-')
+    latency_file = get_file_by_prefix(args.dir, 'lat-')
+    
+    print(f"Caricamento dati dalla cartella: {args.dir}")
+    print(f"  -> Rate file: {os.path.basename(rate_file)}")
+    print(f"  -> Active file: {os.path.basename(active_file)}")
+    print(f"  -> Latency file: {os.path.basename(latency_file)}\n")
+except FileNotFoundError as e:
+    print(e)
+    exit(1)
+
+# Caricamento e pulizia dei dati (Invariato)
 df_rate = pd.read_csv(rate_file)
 df_rate['Time'] = pd.to_datetime(df_rate['Time'])
 
-# Find the tested algorithm dynamically (fallback to 'roundrobin' if not found)
+# Trova l'algoritmo testato dinamicamente
 tested_algo = 'roundrobin'
 for c in df_rate.columns:
     if c not in ('Time', 'Elapsed_Min', 'prequal'):
         tested_algo = c
         break
 
-
-# Helper function to convert strings like "6.19K req/s" or "825 req/s" to float
+# Helper function per convertire le stringhe del rate
 def parse_rate(val):
     if pd.isna(val):
         return np.nan
@@ -35,13 +53,11 @@ def parse_rate(val):
         return float(val.replace('K', '')) * 1000
     return float(val)
 
-
 for col in ['prequal', tested_algo]:
     if col in df_rate.columns:
         df_rate[col] = df_rate[col].apply(parse_rate)
 
-# Load and clean Active Requests Data
-
+# Load e clean Active Requests Data
 df_active = pd.read_csv(active_file)
 df_active['Time'] = pd.to_datetime(df_active['Time'])
 
@@ -49,12 +65,11 @@ for col in ['prequal', tested_algo]:
     if col in df_active.columns:
         df_active[col] = pd.to_numeric(df_active[col], errors='coerce')
 
-# Load and clean Request Latency Data
+# Load e clean Request Latency Data
 df_latency = pd.read_csv(latency_file)
 df_latency['Time'] = pd.to_datetime(df_latency['Time'])
 
-
-# Helper function to remove "ms" and convert to float
+# Helper function per rimuovere "ms" e convertire
 def parse_latency(val):
     if pd.isna(val):
         return np.nan
@@ -71,12 +86,11 @@ def parse_latency(val):
     except ValueError:
         return np.nan
 
-
 for col in df_latency.columns:
     if col != 'Time':
         df_latency[col] = df_latency[col].apply(parse_latency)
 
-# relativization of instants
+# Relativizzazione degli istanti di tempo
 start_time = min(df_rate['Time'].min(), df_active['Time'].min(), df_latency['Time'].min())
 
 df_rate['Elapsed_Min'] = (df_rate['Time'] - start_time).dt.total_seconds() / 60.0
@@ -84,8 +98,6 @@ df_active['Elapsed_Min'] = (df_active['Time'] - start_time).dt.total_seconds() /
 df_latency['Elapsed_Min'] = (df_latency['Time'] - start_time).dt.total_seconds() / 60.0
 
 # Plotting
-# Create 3 subplots sharing the same X-axis
-
 fig, axes = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
 
 # Graph 1: Request Rate
@@ -106,7 +118,7 @@ axes[1].grid(True, linestyle='--', alpha=0.6)
 
 # Graph 3: Latency
 cols_to_plot = ['prequal p50', f'{tested_algo} p50', 'prequal p90', f'{tested_algo} p90', 'prequal p99',
-                f'{tested_algo} p99', 'prequal p99.9',f'{tested_algo} p99.9']
+                f'{tested_algo} p99', 'prequal p99.9', f'{tested_algo} p99.9']
 linestyles = {'prequal p50': '-', f'{tested_algo} p50': '-', 'prequal p90': '--', f'{tested_algo} p90': '--',
               'prequal p99': ':', f'{tested_algo} p99': ':', 'prequal p99.9': '-.', f'{tested_algo} p99.9': '-.'}
 colors = {'prequal p50': '#1f77b4', f'{tested_algo} p50': '#ff7f0e', 'prequal p90': '#1f77b4',
@@ -120,15 +132,12 @@ for col in cols_to_plot:
 axes[2].set_title('Request Latency (p50, p90, p99, p99.9)')
 axes[2].set_ylabel('Latency (ms)')
 axes[2].set_yscale('log')
-
-# Aggiorniamo l'etichetta dell'asse X
 axes[2].set_xlabel('Minutes passed')
-
 axes[2].legend(fontsize='small')
 axes[2].grid(True, linestyle='--', alpha=0.6)
 
-
-
-# Save and show
-plt.savefig('performance_metrics.png', dpi=300)
+# Salva il plot direttamente all'interno della cartella selezionata
+output_plot_path = os.path.join(args.dir, 'performance_metrics.png')
+plt.savefig(output_plot_path, dpi=300)
+print(f"Grafico salvato in: {output_plot_path}")
 plt.show()
