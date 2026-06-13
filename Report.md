@@ -208,7 +208,7 @@ Paper:
 work = 2500
 ```
 
-First experiment:
+First experiment (moderate heterogeneity):
 ```
 if work == 0 {
 			work = 1000 + int(rand.ExpFloat64()*1500)
@@ -218,7 +218,7 @@ if work == 0 {
 		}
 ```
 
-Second experiment:
+Second experiment (extreme eterogeneity):
 ```
 if work == 0 {
 			work = 1000 + int(rand.ExpFloat64()*4000)
@@ -229,7 +229,7 @@ if work == 0 {
 ```
 
 Note that the work correspond to the execution of a SHA 256 algorithm.
-The difference between the first and the second experiment is that the workload is more variable and more heavy distributed towards the tail, simulating a case of very heterogenous workload as is possible to see in the image. 
+The difference between the baseline, the first experiment, and the second experiment is the introduction of a highly variable workload heavily distributed towards the tail. This simulates a real-world scenario where a few requests demand disproportionately high CPU time, as shown in Figure 3.
 
 <div style="text-align: center;">
   <img
@@ -240,8 +240,53 @@ The difference between the first and the second experiment is that the workload 
   <p>Figure 3: Comparison between the distribution of the workloads used in the two experiments</p>
 </div>
 
-This experiement remarked again how prequal is effective in managing tail latency.
-It's also interesting to observe that, in case of heavy CPU load, prequal tail latency (at the 99.9th percentile) resemble a sort of "slow" inverse exponential, starting from a level A and reaching a asymptotically a level B, where B < A.
+The experimental results powerfully reaffirm Prequal's effectiveness in managing tail latency, particularly under unpredictable load conditions.
+As it's possible to see in the figures below, Prequal always outperforms or equalize WRR in basically every metric measured (Request latency, Active requests, Request rate) for each percentile considered and at every workload level.
+
+- **Moderate heterogeneity**:
+When moderate variability is introduced (Figure 5), the divergence between the two policies becomes starker. While WRR maintains acceptable p50 latencies at lower loads, its p99 and p99.9 latencies become highly erratic, jumping unpredictably. This occurs because unlucky servers assigned to heavy requests are aggressively penalized by WRR's strict CPU-balancing logic. Prequal continues to absorb the variance smoothly, though we begin to see its own p99.9 latency fluctuate slightly earlier in the load progression than in the baseline test.
+
+
+- **Extreme heterogeneity**:
+The final test with extreme variability (Figure 4) exposes the fundamental flaw of balancing on CPU utilization rather than instantaneous load.
+While in the case of fixed load or slightly variable load WRR shows a good latency in the 99th percentile (comparable, if not equal to the one reported by Prequal) in case of low loads, in the case of highly variable distribution of load between requests, WRR struggles immediately, reporting a latency that is more than 50% bigger than the one reported by Prequal and hitting instantly the 50 RIF ceiling .
+Also Prequal starts to struggle with the latency of the 99th percentile at heavy loads, while for fixed and slightly variable worloads the behaviour is constant, in the case of highly variable requests its behaviour tend to be very fluctuating with sudden peaks and unpredictable performances.
+
+
+
+<div style="text-align: center;">
+  <img
+    alt="Figure 4: Results obtained in the test with exponential load with 2500 0f mean."
+    src="sources/performance_metrics_min_exp.png"
+    style="width:50%;"
+    />
+  <p>Figure 4: Results obtained in the test with exponential load with 2500 of mean and cap at 10000</p>
+</div>
+
+<div style="text-align: center;">
+  <img
+    alt="Figure 5: Results obtained in the test with exponential load with 5000 0f mean."
+    src="sources/performance_metrics_max_exp.png"
+    style="width:50%;"
+    />
+  <p>Figure 5: Results obtained in the test with exponential load with 5000 of mean and cap at 15000</p>
+</div>
+
+## 5.2. Evaluating the Least Loaded Algorithm
+
+In addition to evaluating heterogeneous workloads, we also conducted an experiment to compare Prequal against the Least Loaded algorithm. According to the original paper, while the Least Loaded policy generally performs better than WRR, it still lags significantly behind Prequal, especially at high load levels. However, as illustrated in our experimental results, we observed a very different behavior. In our setup, Least Loaded achieved performance metrics that were remarkably similar to Prequal across all percentiles. In fact, under certain load steps, Least Loaded occasionally exhibited slightly better tail latency than Prequal.
+
+<div style="text-align: center;">
+  <img
+    alt="Figure 6: Results comparing Prequal and Least Loaded."
+    src="sources/performance_metrics_ll.png"
+    style="width:50%;"
+    />
+  <p>Figure 6: Results obtained comparing Prequal and the Least Loaded algorithm</p>
+</div>
+
+This unexpected parity is not indicative of Prequal's structural equivalence to Least Loaded, but rather points to an infrastructural limitation in our test environment. Specifically, we encountered a CPU bottleneck on the load balancer node itself. The load balancer's CPU capacity maxed out before it could push enough traffic to fully saturate the backend servers. Because the backend servers never reached the critical load thresholds where Prequal typically provide the most significant benefits, Least Loaded appeared just as effective, if not better (maybe due to the added load). This represents an interesting failure to reproduce the paper's exact delta, highlighting that when evaluating advanced routing policies, the load balancer must be provisioned sufficiently to avoid masking the actual backend performance differences.
+
 
 # 6. Reproducibility Assessment of the Paper
 
