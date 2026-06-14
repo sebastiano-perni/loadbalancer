@@ -139,18 +139,18 @@ The setup scripts allow the following parameters to be configured:
 
 Step-by-step description:
 
-So we started first by trying artifact on our computer to understand if the artifacted provided to us actually worked. So the first steps were:
+So we started first by trying artifact on our computer to understand if the artifact provided to us actually worked. So the first steps were:
 
--actually cloning a repository on our computers, 
--understand how to launch the program
--explore which tools are used for metric analysis
--install some libraries required by artifact.
+- actually cloning a repository on our computers, 
+- understand how to launch the program
+- explore which tools are used for metric analysis
+- install some libraries required by artifact.
 
 In fact we discovered that artifact uses Grafana and Prometheus for profiling.
 
 Second step was understanding how we can reserve the nodes on CLoudlab for running our expirement. So, we did registration steps in order to have access to CloudLab and tried to reserve 3 servers. 2 components of our group had some issues with ssh protocols and couldn't connect to servers thar were reserved. The problem was that ssh key that were used had id_ed25519 algorithm,but cloudlab required rsa algorithm. As our next step we configured CloudLab in order to automatically upload and configure our artifact on CLoudLab servers.So we forked the repository and made configuration file for Cloudlab.
 
-Next step was to launch artifact and see if it worked on multi server environment. We had some problem with visualization of results with Grafana,so we changed Dockerfile to fix the problem.
+Next step was to launch artifact and see if it worked on multi server environment. We had some problem with visualization of results with Grafana,so we changed Dockerfile to fix the problem. After trying with configuration of 25 servers(1 client 2 loadbalancers and 22 servers) and veryfiung that servers are visible to grafana we start to collect some data about PREQUALl vs WRR metrics.After that we started to change a loads that servers were recieving,because in the old artifact it was randomly generated from 0 to 1200 Request per second and we modify it by increasing a threshold and by changing probability distribution to exponential.The main idea of this is to randomly genertae the load and see if there is any differnece between PREQUALL and WRR(Weighted Round Robin).The results show similar behaviour that we are observed in paper,but we were sceptic about workload geneartion, so we fixed a number of Request in order to create some pressure on servers and see what can happen. Also in this case PREQUALL had clear advantage respect to WRR. Sometimes we collected data that in some points of plot had jitter,but we associated this problem to ....?Since Google have a lot of servers,we didn't want to remain with 30 servers and wanted to try bigger system.In fact, we launched 100 servers to collect data,but plots showed a very strange picture. WRR performed better than PREQUALL and we were surpised with the result at the first glance.Our hypothesis is, since PREQUALL is balancing cpu loads, in this case we had a not sufficient number of loadbalancers in order to balance Requests to each server.This is something that should be verified,and could be explored successfully.
 
 
 
