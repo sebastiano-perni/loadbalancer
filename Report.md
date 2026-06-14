@@ -139,6 +139,21 @@ The setup scripts allow the following parameters to be configured:
 
 Step-by-step description:
 
+So we started first by trying artifact on our computer to understand if the artifacted provided to us actually worked. So the first steps were:
+
+-actually cloning a repository on our computers, 
+-understand how to launch the program
+-explore which tools are used for metric analysis
+-install some libraries required by artifact.
+
+In fact we discovered that artifact uses Grafana and Prometheus for profiling.
+
+Second step was understanding how we can reserve the nodes on CLoudlab for running our expirement. So, we did registration steps in order to have access to CloudLab and tried to reserve 3 servers. 2 components of our group had some issues with ssh protocols and couldn't connect to servers thar were reserved. The problem was that ssh key that were used had id_ed25519 algorithm,but cloudlab required rsa algorithm. As our next step we configured CloudLab in order to automatically upload and configure our artifact on CLoudLab servers.So we forked the repository and made configuration file for Cloudlab.
+
+Next step was to launch artifact and see if it worked on multi server environment. We had some problem with visualization of results with Grafana,so we changed Dockerfile to fix the problem.
+
+
+
 1. Execution procedure
 1. Measurement method (Grafana, Prometheus)
 1. Number of runs 
@@ -293,8 +308,11 @@ This unexpected parity is not indicative of Prequal's structural equivalence to 
 Evaluate the paper itself:
 
 - Was the methodology clearly described?
+  The methodology was explained quite well on high level, but it is important to mention that paper didn't include some pseudocode in order to replicate it. So if we were supposed to start our project without having an artifact provided,it could be much difficult to actually implement the logic of PREQUALL. Some plots were not described pretty well,and we spend a littl bit of time to decifrate some of them.
 - Was the artifact usable? 
+  Artifact indeed was very usefull as the first step of testing on our computers. Even if we did some tweaking of the parameters and changed some code in order to run it on CloudLab, overall initial artifact provided us a well structured code.It did work on our computers,but on CloudLab Servers it didn't show packets information and didn't show performance metrics. So without the neccessary changes, it couldn't be possible to evaluate the performance of the system.
 - How difficult was reproduction? 
+  It was difficult to replicate it at first glance, because sometimes results were not the ones we were expected, but after changing workloads,it clearly confirmed practical results provided by paper itself. Also the paper didn't provide us with a pseudocode, artifact that we were provided with ,succeded with implementing initial logic of the Paper. Sometimes we had strange results,for example PREQUALL performed worse than WRR with 100 servers, which is quite strange.So even if we confirmed some results of the paper,it needs to be evaluated on much higher number of server and workloads to guarantee actual benefit of the PREQUALL respect to WRR.
 
 # 7. Conclusion
 
