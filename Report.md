@@ -319,6 +319,16 @@ Evaluate the paper itself:
 Conclude the report by mentioning the takeaways of experiments you did
 
 
+Our project evaluated Prequal compared to the WRR algorithm in an environment made up of multiple servers. We succeded in reproducing the results obtained in the report regarding the tail latency, confirming that balancing requests based on requests in flight and latency is more effective than using CPU utilization as balancing metric, especially if we look at tail latency.
+
+From our experiment and further explorations we also gathered the following takeaways:
+- **Prequal is highly effective in situation of unpredictable loads:** While WRR can maintain acceptable median latencies under fixed or lightly variable loads, it severely penalizes unlucky servers when handling extreme heterogeneity.In fact, in our tests where the load was distributed with a negative exponential curve, WRR struggled immediately, while Prequal reported a better management of high heterogeneity.
+- **Advanced load balancing policies could be ineffective if infrastructure is the bottleneck:** In our attempt to compare Prequal with the LeastLoaded algorithm the results returned unexpected parity between the two loadbalancing policies (while in the paper Prequal clearly performs better). The reason behind that is not a fault in our implementation of Prequal or an extremely version of the LeastLoaded algorithm, but a CPU bottleneck on our load balancer node which prevented the backend servers from reaching the critical load thresholds where Prequal usually outperforms the other algorithms.
+
+  The same problem emerged even when we tried to reproduce the experiment using multiple virtual servers on the same physical machine. In that case WRR appeared to perform better, always due to a bottleneck in the CPU of the loadbalancer node.This demonstrates that while the underlying logic of Prequal is solid, adapting it requires careful architectural scaling to guarantee its benefits.
+
+- **Reproducibility Challenges:** While the provided artifact was a starting point to test the behaviour of Prequal, the lack of pseudocode in the original paper made a coherent replication of the algorithm an hard challenge. Furthermore, deploying the artifact on CloudLab required significant configuration adjustments. Finally, since Prequal is designed specifically to mitigate instantaneous latency spikes, a critical role is also played by the monitoring tools (in our case Prometheus and Grafana), a correct configuration (for example setting a correct sampling interval) and a cleaning of the output data (given that Grafana relies on moving average) is essential to analyze correctly the behaviour of the load balancing algorithms over short time intervals.
+
 ---
 
 # Appendix
