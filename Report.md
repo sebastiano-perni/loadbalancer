@@ -290,11 +290,11 @@ The experimental results powerfully reaffirm Prequal's effectiveness in managing
 As it's possible to see in the figures below, Prequal always outperforms or equalize WRR in basically every metric measured (Request latency, Active requests, Request rate) for each percentile considered and at every workload level.
 
 - **Moderate heterogeneity**:
-When moderate variability is introduced (Figure 5), the divergence between the two policies becomes starker. While WRR maintains acceptable p50 latencies at lower loads, its p99 and p99.9 latencies become highly erratic, jumping unpredictably. This occurs because unlucky servers assigned to heavy requests are aggressively penalized by WRR's strict CPU-balancing logic. Prequal continues to absorb the variance smoothly, though we begin to see its own p99.9 latency fluctuate slightly earlier in the load progression than in the baseline test.
+When moderate variability is introduced (Figure 4), the divergence between the two policies becomes starker. While WRR maintains acceptable p50 latencies at lower loads, its p99 and p99.9 latencies become highly erratic, jumping unpredictably. This occurs because unlucky servers assigned to heavy requests are aggressively penalized by WRR's strict CPU-balancing logic. Prequal continues to absorb the variance smoothly, though we begin to see its own p99.9 latency fluctuate slightly earlier in the load progression than in the baseline test.
 
 
 - **Extreme heterogeneity**:
-The final test with extreme variability (Figure 4) exposes the fundamental flaw of balancing on CPU utilization rather than instantaneous load.
+The final test with extreme variability (Figure 5) exposes the fundamental flaw of balancing on CPU utilization rather than instantaneous load.
 While in the case of fixed load or slightly variable load WRR shows a good latency in the 99th percentile (comparable, if not equal to the one reported by Prequal) in case of low loads, in the case of highly variable distribution of load between requests, WRR struggles immediately, reporting a latency that is more than 50% bigger than the one reported by Prequal and hitting instantly the 50 RIF ceiling .
 Also Prequal starts to struggle with the latency of the 99th percentile at heavy loads, while for fixed and slightly variable worloads the behaviour is constant, in the case of highly variable requests its behaviour tend to be very fluctuating with sudden peaks and unpredictable performances.
 
@@ -333,17 +333,28 @@ In addition to evaluating heterogeneous workloads, we also conducted an experime
 
 This unexpected parity is not indicative of Prequal's structural equivalence to Least Loaded, but rather points to an infrastructural limitation in our test environment. Specifically, we encountered a CPU bottleneck on the load balancer node itself. The load balancer's CPU capacity maxed out before it could push enough traffic to fully saturate the backend servers. Because the backend servers never reached the critical load thresholds where Prequal typically provide the most significant benefits, Least Loaded appeared just as effective, if not better (maybe due to the added load). This represents an interesting failure to reproduce the paper's exact delta, highlighting that when evaluating advanced routing policies, the load balancer must be provisioned sufficiently to avoid masking the actual backend performance differences.
 
-
 # 6. Reproducibility Assessment of the Paper
 
-Evaluate the paper itself:
+The paper's methodology was explained quite well at a high level, but it lacked the pseudocode necessary to easily
+replicate it. Had we started the project without the provided artifact, implementing Prequal's logic would have been
+significantly more difficult. Additionally, some plots lacked clear descriptions and required extra time to decipher.
+The provided artifact itself was highly useful as a starting point for local testing and offered well-structured code.
+While it worked smoothly on our personal computers, deploying it on CloudLab required crucial parameter tweaks and code
+modifications, as it initially failed to capture packet information or performance metrics. Without these necessary
+adjustments, evaluating the system's performance would have been impossible.
 
-- Was the methodology clearly described?
-  The methodology was explained quite well on high level, but it is important to mention that paper didn't include some pseudocode in order to replicate it. So if we were supposed to start our project without having an artifact provided,it could be much difficult to actually implement the logic of PREQUALL. Some plots were not described pretty well,and we spend a littl bit of time to decifrate some of them.
-- Was the artifact usable? 
-  Artifact indeed was very usefull as the first step of testing on our computers. Even if we did some tweaking of the parameters and changed some code in order to run it on CloudLab, overall initial artifact provided us a well structured code.It did work on our computers,but on CloudLab Servers it didn't show packets information and didn't show performance metrics. So without the neccessary changes, it couldn't be possible to evaluate the performance of the system.
-- How difficult was reproduction? 
-  It was difficult to replicate it at first glance, because sometimes results were not the ones we were expected, but after changing workloads,it clearly confirmed practical results provided by paper itself. Also the paper didn't provide us with a pseudocode, artifact that we were provided with ,succeded with implementing initial logic of the Paper. Sometimes we had strange results,for example PREQUALL performed worse than WRR with 100 servers, which is quite strange.So even if we confirmed some results of the paper,it needs to be evaluated on much higher number of server and workloads to guarantee actual benefit of the PREQUALL respect to WRR.
+Reproducing the original findings was challenging at first glance, as our initial results did not match expectations.
+However, after tuning the infrastructure, workload, and client configurations, we clearly confirmed the practical
+outcomes presented in the paper. During this process, we also attempted to recreate the exact experiment described by
+the authors, which featured 100 clients and 100 servers, each constrained to 10% of the machine's CPU. To achieve this,
+we allocated 10 backend nodes on CloudLab and started 10 backend processes on each node, limiting their CPU usage based
+on available cores. We then generated the workload using `hey` configured with 100 workers and an appropriate request
+rate. Unfortunately, we could not reproduce the paper's results with this setup; the metrics showed extreme
+inconsistency, and Prequal often underperformed compared to WRR. The most likely reason is that the load balancers were
+being overloaded by the sheer volume of requests required to fill the capacity of 100 servers, hitting their CPU limits.
+We tried addressing this by increasing the workload payload to saturate the backends, changing the number of `hey`
+workers and their request rates, and testing different CPU limits, but the setup still did not behave as expected. While
+we are not entirely sure of the exact cause, it is likely that multiple infrastructural bottlenecks were at play.
 
 # 7. Conclusion
 
