@@ -1,4 +1,4 @@
-# Replicating: "The Title of Paper You Selected From The List"
+# Replicating: "Load is not what you should balance: Introducing Prequal"
 
 **Team Members:**  
 Sebastiano Perni (sebastiano.perni@mail.polimi.it);  
@@ -19,9 +19,6 @@ Stephen M. Rumble, Google (YouTube); Aaron Archer, Google Research
 ---
 
 # 1. Introduction
-
-Introduce the paper by summarizing:
-
 ## The problem the paper addresses and its importance
 In big, multi-tenant datacenters load balancers typically distribute a huge amount of queries across vast pools of server replicas. The usual load balancing policy used at YouTube, Google and in many other companies is the WRR (Weighted Round Robin), which focuses on balancing CPU utilization across distributed servers in a single job.
 However, this paper demonstrates that load is not what you should balance. In fact, focusing on CPU utilization as a primary metric backfires in modern infrastructure due to two critical flaws:
@@ -52,13 +49,11 @@ In order to achieve a successful result, the design goals of prequal are:
 
 # 2. Selected Result
 
-Mention which result of the paper you are reproducing, and explain its importance.
-
 
 The main result of the paper we would like to reproduce is the comparison between Prequal and WRR in the case of a multi-server system. In particular we would like to highlight the differences in the tail latency, the rate of requests and their latency for both the algorithms.
-To properly evaluate the behavior of the system, we reproduce the load ramp experiment. The aggregate CPU load begins at 75% of the allocation and is incrementally raised in 8 multiplicative steps of 10/9. This progression yields the following specific load levels: 0.75x, 0.83x, 0.93x, 1.03x, 1.14x, 1.27x, 1.41x, 1.57x, and 1.74x of the allocated CPU.
+To properly evaluate the behavior of the system, we reproduced the load ramp experiment. The aggregate CPU load begins at 75% of the allocation and is incrementally raised in 8 multiplicative steps of 10/9. This progression yields the following specific load levels: 0.75x, 0.83x, 0.93x, 1.03x, 1.14x, 1.27x, 1.41x, 1.57x, and 1.74x of the allocated CPU.
 
-Particular attention is given to the behaviour of the system at peak load and at the tail latency. This is important because one of the primary aim of Prequal is to reduce tail latency and error rates, to allow production systems (such as Youtube) to run at much higher utilization than what could be reached with other types of algorithms. Therefore we expect that, the after the percentage of CPU utilization exceed the 100%, the behaviour of the two algorithms diverge, in particular looking at the latency of the last percentiles, as is possible to observe in Figure 1.
+Particular attention is given to the behaviour of the system at peak load and at the tail latency. This is important because one of the primary aim of Prequal is to reduce tail latency, to allow production systems (such as Youtube) to run at much higher utilization than what could be reached with other types of algorithms. Therefore we expect that, after the percentage of CPU utilization exceed the 100%, the behaviour of the two algorithms diverge, in particular looking at the latency of the last percentiles, as is possible to observe in Figure 1.
 
 
 <div style="text-align: center;">
@@ -74,7 +69,7 @@ Particular attention is given to the behaviour of the system at peak load and at
 
 ## Hardware Environment
 
-The experiment has been conducted on the CloudLab platform, using the Utah cluster. More specifically, we used 14 m510
+The experiment has been conducted on the CloudLab platform, using the Utah cluster. More specifically, we used in most of the cases 14 m510 (depending on Cloudlab availability)
 nodes, each with an Intel Xeon D-1548 CPU (8 cores, 16 threads) and 64 GB of RAM. Of the 14 nodes, 1 was used as a load
 generator, 1 as a telemetry server (running Prometheus and Grafana), 2 as load balancers, and the remaining ones as
 backend servers.
@@ -83,7 +78,7 @@ backend servers.
 
 The experiment is based on a fork of the provided Prequal codebase, which is available at
 this [link](https://github.com/omarshaarawi/loadbalancer). The forked repository adds the necessary scripts for running
-the experiment and collecting results, as well as code for the further exploration described in section 5.
+the experiment on Cloudlab and collecting results, as well as code for the further exploration described in section 5.
 
 The software environment is based on Ubuntu 22.04. The included scripts install the following dependencies:
 
@@ -104,7 +99,7 @@ The setup scripts allow the following parameters to be configured:
 
 - Number of antagonist servers (default: 3)
 - Load of antagonist servers (default: 60% CPU utilization with stress-ng)
-- Duration of the load test (default: 180 seconds per phase)
+- Duration of the load test (default: 120 seconds per phase)
 
 ## Deviations from the Original Setup
 
@@ -133,13 +128,7 @@ The setup scripts allow the following parameters to be configured:
 
 # 4. Experiment Result
 
-> Explain how your experiment was conducted and then what results you acquired.
-> Afterwards, compare your results with those of the paper and state your
-> takeaways.
-
-Step-by-step description:
-
-We first started by trying the artifact on our computers to understand if the one provided to us actually worked. Thus,
+We first started by trying the original artifact on our computers to understand if the one provided to us actually worked. Thus,
 the initial steps were:
 
 - cloning the repository on our computers,
@@ -147,7 +136,7 @@ the initial steps were:
 - exploring which tools are used for metric analysis,
 - and installing some libraries required by the artifact.
 
-In fact, we discovered that the artifact uses Grafana and Prometheus for profiling.
+In fact, we discovered that the original artifact uses Grafana and Prometheus for profiling.
 
 The second step was understanding how we could reserve nodes on CloudLab to run our experiment. We completed the
 registration steps to gain access to CloudLab and tried to reserve 3 servers. Two members of our group encountered
@@ -155,66 +144,6 @@ issues with the SSH protocol and couldn't connect to the reserved servers. The p
 based on the `id_ed25519` algorithm, but CloudLab required the `rsa` algorithm. At the same time, we configured CloudLab
 to automatically upload and set up our forked artifact on its servers. We tried using a Python script to automate the
 CloudLab setup, but we ran into issues where it occasionally would not execute as expected.
-
-## Setup Procedure
-IMPORTANT: All scripts must be executed from the "client" node.
-Connect via SSH to the "client" node (copying the command from CloudLab).
-Navigate to the repository directory:
-```
-cd /local/repository
-```
-Execute the "initial_setup" script:
-```
-sudo ./initial_setup.sh
-```
-Execute the "start_cluster" script:
-```
-sudo ./start_cluster.sh 
-```
-Where  can be either roundrobin or wrr.
-Now all nodes should be online.
-Running the Workload
-Execute the run_test script with the same arguments you would use for the compare script:
-```
-./run_test.sh --duration 180
-```
-Accessing Grafana
-Connect via SSH with localhost port forwarding to the "telemetry" node:
-```
-ssh -L 3000:localhost:3000 @
-```
-Note: The @ string matches the one found on CloudLab for the "telemetry" node (removing the "ssh" prefix).
-You should now be able to access Grafana from your browser by navigating to: http://localhost:3000
-NOTE: Grafana only displays data when there is active traffic. If you access Grafana before running the workload, the dashboard will appear empty.
-Teardown / Closing
-When you want to stop everything that was launched by start_cluster, simply run:
-```
-sudo ./stop_cluster.sh
-```
-This closes and resets the session (IT ALSO REMOVES ANY ACCUMULATED DATA).
-Synchronizing Changes
-If you make a change that needs to be shared across all nodes, you can apply the change on the "client" node and then run the sync script:
-```
-sudo ./sync.sh
-```
-The modification can be done locally, or it could have been pushed to GitHub. In the latter case, simply perform a git pull on the "client" node before running the sync script.
-Troubleshooting
-Permission Failures: If execution fails due to permissions, you might have forgotten to use sudo.
-Missing Dependencies: If execution fails because of missing dependencies like Go, Hey, Docker, etc., try installing them manually on the respective nodes.
-Grafana fails to close after stop_cluster: The container on the "telemetry" node might not have stopped. In this case, connect to that node via SSH and check for running containers using:
-```
-sudo docker ps
-```
-If containers are still running, you must stop and remove them manually:
-```
-sudo docker stop repository-grafana-1
-sudo docker rm repository-grafana-1
-```
-Repeat this process for Prometheus if necessary.
-Browser connection to Grafana fails:
-You might have used the wrong port.
-Try waiting for about thirty seconds.
-You might have established the SSH tunnel with localhost to the wrong node.
 
 ## Next steps
 The original artifact compared Prequal to Round Robin Balancing, while the paper compares Prequal to WRR. Thus, we had
@@ -243,74 +172,27 @@ free CPU to absorb the variance. However, as the load increases, WRR starts to s
 continues to maintain much better performance. This aligns with the results of the paper, which shows that WRR's focus
 on CPU utilization leads to severe penalties for unlucky servers, while Prequal's approach of balancing based on RIF and
 latency allows it to better manage such conditions.
-1. Execution procedure
-1. Measurement method (Grafana, Prometheus)
-1. Number of runs
-1. Statistical treatment (mean, median, CI, etc.)
 
-Also Describe:
+If you want to try out our experiment, refer to [Setup Procedure](#setup-procedure) in Appendix.
 
-- How did you ensure correctness (did you check also other metrics to make sure the experiment is running correctly?)
-- Did you do any debugging? Discuss issues you faced and how you overcame them (if applicable consider allocating a
-  subsection for this item)
-  (Grafana + Prometheus, Script for installing stuff on the servers (SUDO, ...),  )
-  Changes from the original REPO:
-  Script for running
-  Load
-  Split in two phases
-  Bug in the computation of the baseline
-
-Share your result and compare them with the paper's. Then discuss your takeaways.
-
-For comparison include:
-
-- Graph(s) or table(s)
-- Matching axes and units with the source paper
-- Error bars if applicable
-- You may want to report difference with the original results (e.g., absolute
-  number or percentage).
-
-For example:
-
-
-> **Reminder:** the goal is not achieve the exact results of the paper, but to do a rigorous experiment with similar
-> assumptions from the source paper and gain insight. The insight can be correctness of work, failure to reproduce same
-> results, or even infeasibility of doing such experiment for interesting reasons.
 
 # 5. Further Exploration
-
-In this project you are required to also explore a research question of your own. Either:
-
-1. Take the same test with different input workload or a variation of a test that is not present in the paper and comment the results you obtain
-1. Implement a new feature on top of the system you evaluated and show a figure showing the performance
-
-Discuss which approach you take, and what you explored. Explain what was your
-motivation and importance of your question.
 
 In the original paper the workload is fixed, while in the original artifact the workload difference between two requests can be at maximum 50% with an average of 25%. Thus, we questioned ourselves about what could happen with a type of workload which is extremely heterogenous in both WRR and Prequal.
 
 
-What we expect is to see worst performances on tail latency by WRR, since the unlucky servers to which are assigned particularly heavy requests will be extremely penalized. While for average latency we don't expext significative variations.
+What we expect is to see worse performances on tail latency by WRR compared to our previous results, since the unlucky servers to which are assigned particularly heavy requests will be extremely penalized. While for average latency we don't expext significative variations.
 
 ## 5.1. Methodology and Result
-
-Report the experiment you designed for answering the question and share the
-result you got.
-
-Include:
-
-- Graph(s) or table(s)
-- How the experiment was conducted (share the details)
-- What did you discover?
 
 In practice the workload is assigned in this way:
 
 Original artifact:
 ```
-work = 1000 + rand.IntN(501)
+work = 1000 + rand.IntN(500)
 ```
 
-Paper:
+Paper replication:
 ```
 work = 2500
 ```
@@ -351,7 +233,7 @@ The experimental results powerfully reaffirm Prequal's effectiveness in managing
 As it's possible to see in the figures below, Prequal always outperforms or equalize WRR in basically every metric measured (Request latency, Active requests, Request rate) for each percentile considered and at every workload level.
 
 - **Moderate heterogeneity**:
-When moderate variability is introduced (Figure 4), the divergence between the two policies becomes starker. While WRR maintains acceptable p50 latencies at lower loads, its p99 and p99.9 latencies become highly erratic, jumping unpredictably. This occurs because unlucky servers assigned to heavy requests are aggressively penalized by WRR's strict CPU-balancing logic. Prequal continues to absorb the variance smoothly, though we begin to see its own p99.9 latency fluctuate slightly earlier in the load progression than in the baseline test.
+When moderate variability is introduced (Figure 4), the divergence between the two policies becomes more evident. While WRR maintains acceptable p50 latencies at lower loads, its p99 and p99.9 latencies become highly erratic, jumping unpredictably. This occurs because unlucky servers assigned to heavy requests are aggressively penalized by WRR's strict CPU-balancing logic. Prequal continues to absorb the variance smoothly, though we begin to see its own p99.9 latency fluctuate slightly earlier in the load progression than in the baseline test.
 
 
 - **Extreme heterogeneity**:
@@ -392,7 +274,7 @@ In addition to evaluating heterogeneous workloads, we also conducted an experime
   <p>Figure 6: Results obtained comparing Prequal and the Least Loaded algorithm</p>
 </div>
 
-This unexpected parity is not indicative of Prequal's structural equivalence to Least Loaded, but rather points to an infrastructural limitation in our test environment. Specifically, we encountered a CPU bottleneck on the load balancer node itself. The load balancer's CPU capacity maxed out before it could push enough traffic to fully saturate the backend servers. Because the backend servers never reached the critical load thresholds where Prequal typically provide the most significant benefits, Least Loaded appeared just as effective, if not better (maybe due to the added load). This represents an interesting failure to reproduce the paper's exact delta, highlighting that when evaluating advanced routing policies, the load balancer must be provisioned sufficiently to avoid masking the actual backend performance differences.
+This unexpected parity is not indicative of Prequal's structural equivalence to Least Loaded, but rather points to an infrastructural limitation in our test environment. Specifically, we encountered a CPU bottleneck on the load balancer node itself. The load balancer's CPU capacity maxed out before it could push enough traffic to fully saturate the backend servers. Because the backend servers never reached the critical load thresholds where Prequal typically provide the most significant benefits, Least Loaded appeared just as effective, if not better (maybe due to the added load, given by probing). This represents an interesting failure to reproduce the paper's exact delta, highlighting that when evaluating advanced routing policies, the load balancer must be provisioned sufficiently to avoid masking the actual backend performance differences.
 
 # 6. Reproducibility Assessment of the Paper
 
@@ -415,20 +297,17 @@ inconsistency, and Prequal often underperformed compared to WRR. The most likely
 being overloaded by the sheer volume of requests required to fill the capacity of 100 servers, hitting their CPU limits.
 We tried addressing this by increasing the workload payload to saturate the backends, changing the number of `hey`
 workers and their request rates, and testing different CPU limits, but the setup still did not behave as expected. While
-we are not entirely sure of the exact cause, it is likely that multiple infrastructural bottlenecks were at play.
+we are not entirely sure of the exact cause, it is likely that multiple infrastructural bottlenecks were at play. Another possible cause could be power of d-choises of our artifact.
 
 # 7. Conclusion
-
-Conclude the report by mentioning the takeaways of experiments you did
-
 
 Our project evaluated Prequal compared to the WRR algorithm in an environment made up of multiple servers. We succeeded in reproducing the results obtained in the report regarding the tail latency, confirming that balancing requests based on requests in flight and latency is more effective than using CPU utilization as balancing metric, especially if we look at tail latency.
 
 From our experiment and further explorations we also gathered the following takeaways:
-- **Prequal is highly effective in situation of unpredictable loads:** While WRR can maintain acceptable median latencies under fixed or lightly variable loads, it severely penalizes unlucky servers when handling extreme heterogeneity.In fact, in our tests where the load was distributed with a negative exponential curve, WRR struggled immediately, while Prequal reported a better management of high heterogeneity.
+- **Prequal is highly effective in situation of unpredictable loads:** While WRR can maintain acceptable median latencies under fixed or lightly variable loads, it severely penalizes unlucky servers when handling extreme heterogeneity. In fact, in our tests where the load was distributed with a negative exponential curve, WRR struggled immediately, while Prequal reported a better management of high heterogeneity.
 - **Advanced load balancing policies could be ineffective if infrastructure is the bottleneck:** In our attempt to compare Prequal with the LeastLoaded algorithm the results returned unexpected parity between the two loadbalancing policies (while in the paper Prequal clearly performs better). The reason behind that is not a fault in our implementation of Prequal or an extremely version of the LeastLoaded algorithm, but a CPU bottleneck on our load balancer node which prevented the backend servers from reaching the critical load thresholds where Prequal usually outperforms the other algorithms.
 
-  The same problem emerged even when we tried to reproduce the experiment using multiple virtual servers on the same physical machine. In that case WRR appeared to perform better, always due to a bottleneck in the CPU of the loadbalancer node.This demonstrates that while the underlying logic of Prequal is solid, adapting it requires careful architectural scaling to guarantee its benefits.
+  The same problem emerged even when we tried to reproduce the experiment using multiple virtual servers on the same physical machine. In that case WRR appeared to perform better, always due to a bottleneck in the CPU of the loadbalancer node. This demonstrates that while the underlying logic of Prequal is solid, adapting it requires careful architectural scaling to guarantee its benefits.
 
 - **Reproducibility Challenges:** While the provided artifact was a starting point to test the behaviour of Prequal, the lack of pseudocode in the original paper made a coherent replication of the algorithm an hard challenge. Furthermore, deploying the artifact on CloudLab required significant configuration adjustments. Finally, since Prequal is designed specifically to mitigate instantaneous latency spikes, a critical role is also played by the monitoring tools (in our case Prometheus and Grafana), a correct configuration (for example setting a correct sampling interval) and a cleaning of the output data (given that Grafana relies on moving average) is essential to analyze correctly the behaviour of the load balancing algorithms over short time intervals.
 
@@ -436,10 +315,63 @@ From our experiment and further explorations we also gathered the following take
 
 # Appendix
 
-You are asked to write this report using Markdown. You can find a cheat sheet
-of Markdown syntax at this [link](https://rust-lang.github.io/mdBook/format/markdown.html).
+## Setup Procedure
+IMPORTANT: All scripts must be executed from the "client" node.
+Connect via SSH to the "client" node (copying the command from CloudLab).
+Navigate to the repository directory:
+```
+cd /local/repository
+```
+Execute the "initial_setup" script:
+```
+sudo ./initial_setup.sh
+```
+Execute the "start_cluster" script:
+```
+sudo ./start_cluster.sh <algorithm>
+```
+Where `<algorithm>` can be either roundrobin, wrr, random or leastloaded.
+Now all nodes should be online.
+### Running the Workload
+Execute the run_test script with the same arguments you would use for the compare script:
+```
+./run_test.sh --duration 180
+```
+Accessing Grafana
+Connect via SSH with localhost port forwarding to the "telemetry" node:
+```
+ssh -L 3000:localhost:3000 @
+```
+Note: The @ string matches the one found on CloudLab for the "telemetry" node (removing the "ssh" prefix).
+You should now be able to access Grafana from your browser by navigating to: http://localhost:3000
 
-For generating a PDF file from your report you can use a tool of your choice.
-*md2pdf* is one such tool. See this [link](https://pypi.org/project/md2pdf/)
-for more information about it. You can also use an online editor such as [this](https://www.md2pdf.io/).
-
+NOTE: Grafana only displays data when there is active traffic. If you access Grafana before running the workload, the dashboard will appear empty.
+### Teardown / Closing
+When you want to stop everything that was launched by start_cluster, simply run:
+```
+sudo ./stop_cluster.sh
+```
+This closes and resets the session (IT ALSO REMOVES ANY ACCUMULATED DATA).
+### Synchronizing Changes
+If you make a change that needs to be shared across all nodes, you can apply the change on the "client" node and then run the sync script:
+```
+sudo ./sync.sh
+```
+The modification can be done locally, or it could have been pushed to GitHub. In the latter case, simply perform a git pull on the "client" node before running the sync script.
+### Troubleshooting
+Permission Failures: If execution fails due to permissions, you might have forgotten to use sudo.
+Missing Dependencies: If execution fails because of missing dependencies like Go, Hey, Docker, etc., try installing them manually on the respective nodes.
+Grafana fails to close after stop_cluster: The container on the "telemetry" node might not have stopped. In this case, connect to that node via SSH and check for running containers using:
+```
+sudo docker ps
+```
+If containers are still running, you must stop and remove them manually:
+```
+sudo docker stop repository-grafana-1
+sudo docker rm repository-grafana-1
+```
+Repeat this process for Prometheus if necessary.
+Browser connection to Grafana fails:
+You might have used the wrong port.
+Try waiting for about thirty seconds.
+You might have established the SSH tunnel with localhost to the wrong node.
