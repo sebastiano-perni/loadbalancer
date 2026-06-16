@@ -23,20 +23,20 @@ Stephen M. Rumble, Google (YouTube); Aaron Archer, Google Research
 Introduce the paper by summarizing:
 
 ## The problem the paper addresses and its importance
-In big, multi-tenant datacenters loadbalancers typically distribute a huge amount of queries across vast pools of server replicas. The usual load balncing policy used at YouTube, Google and in many other companies is the WRR (Weighted Round Robin), which focuses on balancing CPU utilization across distributed servers in a single job.
-However, this paper demonstrates that load is not what you should balance.Infact, focusing on CPU utilization as a primary metric backfires in modern infrastructure due to two critical flaws:
-- CPU utilization must be averaged over a time window to be meaningful, so it's not able to detect sudden load shifts. Taking as reference some examples of metrics from the Youtube servers, looking at 1 minute time intervals we a good level of stability of CPU utlization across all the server replicas. While of we look at 1 second time intervals we can see greater underlying variability in the signal, with frequent bursts up to nearly twice the limit.
+In big, multi-tenant datacenters load balancers typically distribute a huge amount of queries across vast pools of server replicas. The usual load balancing policy used at YouTube, Google and in many other companies is the WRR (Weighted Round Robin), which focuses on balancing CPU utilization across distributed servers in a single job.
+However, this paper demonstrates that load is not what you should balance. In fact, focusing on CPU utilization as a primary metric backfires in modern infrastructure due to two critical flaws:
+- CPU utilization must be averaged over a time window to be meaningful, so it's not able to detect sudden load shifts. Taking as reference some examples of metrics from the Youtube servers, looking at 1 minute time intervals we observe a high level of stability in CPU utilization across all the server replicas. However, if we look at 1 second time intervals we can see greater underlying variability in the signal, with frequent bursts up to nearly twice the limit.
 
 
-- Replicas share the hardware with unknown antagonist processes, thus even if the load of a service we want to balance is quite stable, the load on each machine can be greatky variable according also to the load of the antagonists. In case of a spike in the demand of the service, available machines can differ greatly in the capacity of absorbing additional load. Since this availability capacity depends also on the antagonists it cannot be predicted in advance but just detected at runtime. In case of heavy load, WRR can trigger disastrous spikes in tail latency and localized timeouts.
+- Replicas share the hardware with unknown antagonist processes, thus even if the load of a service we want to balance is quite stable, the load on each machine can be greatly variable according also to the load of the antagonists. In case of a spike in the demand of the service, available machines can differ greatly in the capacity of absorbing additional load. Since this availability capacity depends also on the antagonists it cannot be predicted in advance but just detected at runtime. In case of heavy load, WRR can trigger disastrous spikes in tail latency and localized timeouts.
 
 
 ## The key ideas behind its solution and its approach
 To overcome the limitations of WRR and similar algorithms, the authors introduce Prequal, which stands for Probing to Reduce Queuing and Latency, a loadbalancing policy designed to reduce the tail latency in multi-tenant datacenters.
-Since CPU utilization is not accurate, Prequal use two load signals, RIF (Request in Flight) and latency.
+Since CPU utilization is not accurate, Prequal uses two load signals, RIF (Request in Flight) and latency.
 The system exploits the power of d choices paradigm, which consists in  sampling d ≥ 2 servers for their load and sending the next request to the least loaded one.
-Prequal categorizes server in hot and cold pool, relative to an estimated RIF distribution quantile. If the entire pool is hot, it picks the server with the absolute lowest RIF to protect hard RAM boundaries. Otherwise, it picks the cold server with the lowest estimated latency.
-In order to achieve a succesful result, the design goals of prequal are:
+Prequal categorizes servers in hot and cold pool, relative to an estimated RIF distribution quantile. If the entire pool is hot, it picks the server with the absolute lowest RIF to protect hard RAM boundaries. Otherwise, it picks the cold server with the lowest estimated latency.
+In order to achieve a successful result, the design goals of prequal are:
 - The minimization of probing overheads.
 - Asynchronous probing to add minimal latency.
 - Minimization of tail latency thanks to the removal of the worst probes.
@@ -325,7 +325,7 @@ if work == 0 {
 		}
 ```
 
-Second experiment (extreme eterogeneity):
+Second experiment (extreme heterogeneity):
 ```
 if work == 0 {
 			work = 1000 + int(rand.ExpFloat64()*4000)
@@ -357,13 +357,13 @@ When moderate variability is introduced (Figure 4), the divergence between the t
 - **Extreme heterogeneity**:
 The final test with extreme variability (Figure 5) exposes the fundamental flaw of balancing on CPU utilization rather than instantaneous load.
 While in the case of fixed load or slightly variable load WRR shows a good latency in the 99th percentile (comparable, if not equal to the one reported by Prequal) in case of low loads, in the case of highly variable distribution of load between requests, WRR struggles immediately, reporting a latency that is more than 50% bigger than the one reported by Prequal and hitting instantly the 50 RIF ceiling .
-Also Prequal starts to struggle with the latency of the 99th percentile at heavy loads, while for fixed and slightly variable worloads the behaviour is constant, in the case of highly variable requests its behaviour tend to be very fluctuating with sudden peaks and unpredictable performances.
+Also Prequal starts to struggle with the latency of the 99th percentile at heavy loads, while for fixed and slightly variable workloads the behaviour is constant, in the case of highly variable requests its behaviour tend to be very fluctuating with sudden peaks and unpredictable performances.
 
 
 
 <div style="text-align: center;">
   <img
-    alt="Figure 4: Results obtained in the test with exponential load with 2500 0f mean."
+    alt="Figure 4: Results obtained in the test with exponential load with 2500 of mean."
     src="sources/performance_metrics_min_exp.png"
     style="width:50%;"
     />
@@ -422,7 +422,7 @@ we are not entirely sure of the exact cause, it is likely that multiple infrastr
 Conclude the report by mentioning the takeaways of experiments you did
 
 
-Our project evaluated Prequal compared to the WRR algorithm in an environment made up of multiple servers. We succeded in reproducing the results obtained in the report regarding the tail latency, confirming that balancing requests based on requests in flight and latency is more effective than using CPU utilization as balancing metric, especially if we look at tail latency.
+Our project evaluated Prequal compared to the WRR algorithm in an environment made up of multiple servers. We succeeded in reproducing the results obtained in the report regarding the tail latency, confirming that balancing requests based on requests in flight and latency is more effective than using CPU utilization as balancing metric, especially if we look at tail latency.
 
 From our experiment and further explorations we also gathered the following takeaways:
 - **Prequal is highly effective in situation of unpredictable loads:** While WRR can maintain acceptable median latencies under fixed or lightly variable loads, it severely penalizes unlucky servers when handling extreme heterogeneity.In fact, in our tests where the load was distributed with a negative exponential curve, WRR struggled immediately, while Prequal reported a better management of high heterogeneity.
