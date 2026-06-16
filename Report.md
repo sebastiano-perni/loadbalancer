@@ -206,11 +206,13 @@ results:
 
 As we can see from the figure, Prequal and WRR perform very similarly at load levels below 103% (as it happens in the paper), where there is enough
 free CPU to absorb the variance. However, as the load increases, WRR starts to struggle with tail latency, while Prequal
-continues to maintain much better performance. This aligns with the results of the paper, which shows that WRR's focus
-on CPU utilization leads to severe penalties for unlucky servers, while Prequal's approach of balancing based on RIF and
-latency allows it to better manage such conditions.
-The behaviour of tail latencies between the paper and the experiment conducted is quite similar, where the 99.9th percentile of WRR exceed 200 ms of latency since the beginning (in the paper is 5s since the scale of the problem is bigger), moving towards bigger workloads the latency of the 99th percentile reach similar values to the one of the 99.9th percentile and also the 90th percentile increase.
+continues to maintain much better performance. 
+The behaviour of tail latencies between the paper and the experiment conducted is quite similar, where the 99.9th percentile of WRR exceed 200 ms of latency (in the previous iterations was around 20 ms) after surpassing the 100% CPU utilization threshold (in the paper is 5s since the scale of the problem is bigger), moving towards bigger workloads the latency of the 99th percentile reach similar values to the one of the 99.9th percentile and also the 90th percentile increase.
 The only big anomaly reported is the behaviour of the 90th percentile of WRR at the sixth iteration, which reports lower levels of latency compared to the values achieved in the fifth iteration.
+This anomaly is probably a consequence of our experiment scale. Because our small cluster relies on a fixed subset of nodes running stress-ng to simulate antagonist nodes, thus statistical fluctuations in the antagonist thread scheduling can momentarily relieve pressure on the p90 bracket more easily than the paper.
+Finally the results of the experiment confirm the thesis of the paper, showing that WRR's focus
+on CPU utilization leads to severe penalties for unlucky servers, while Prequal's approach of balancing based on RIF and
+latency allows to better manage such conditions.
 
 If you want to try out our experiment, refer to [Setup Procedure](#setup-procedure) in Appendix.
 
