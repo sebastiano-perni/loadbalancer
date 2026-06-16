@@ -2,7 +2,7 @@
 
 **Team Members:**  
 Sebastiano Perni (sebastiano.perni@mail.polimi.it);  
-Dmitrii Meshcheriakov (email address);  
+Dmitrii Meshcheriakov (dmitrii.meshcheriakov@mail.polimi.it);  
 Paolo Salvi (paolo3.salvi@mail.polimi.it)
 
 ---
