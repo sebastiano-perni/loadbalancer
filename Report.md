@@ -388,14 +388,14 @@ From our experiment and further explorations we also gathered the following take
   immediately, while Prequal reported a better management of high heterogeneity.
 - **Advanced load balancing policies could be ineffective if infrastructure is the bottleneck:** In our attempt to
   compare Prequal with the LeastLoaded algorithm the results returned unexpected parity between the two loadbalancing
-  policies (while in the paper Prequal clearly performs better). The reason behind that is most likely not a fault in
+  policies (while in the paper Prequal clearly performs better). The reason behind that should most likely  be not a fault in
   our
   implementation of Prequal or an extreme version of the LeastLoaded algorithm, but a CPU bottleneck on our load
   balancer node which prevented the backend servers from reaching the critical load thresholds where Prequal usually
   outperforms the other algorithms.
 
   The same problem emerged even when we tried to reproduce the experiment using multiple virtual servers on the same
-  physical machine. In that case WRR appeared to perform better, always due to a bottleneck in the CPU of the
+  physical machine. In that case WRR appeared to perform better, probably due to a bottleneck in the CPU of the
   load balancer node. This demonstrates that while the underlying logic of Prequal is solid, adapting it requires
   careful
   architectural scaling to guarantee its benefits.
