@@ -113,7 +113,7 @@ The setup scripts allow the following parameters to be configured:
 - **Deviation:** Prequal's original design implements an asynchronous, bounded probe pool of size 16 with advanced
   eviction rules (age, reuse limit, and highest load) to decouple probing from the critical path and maintain O(1)
   overhead. This experiment instead uses a background timer that synchronously polls all N servers and updates a global
-  map.
+  map. Duration of our experiment is 6 mins, instead of original 1 hour experiment . We decided to not replicate exact duration, since plots didn't have significant variation after 6 min.
 
   **Motivation:** While O(N) probing is problematic in datacenters due to massive scale, in our micro-cluster of 10
   nodes, the overhead is negligible and the implementation is simpler.
