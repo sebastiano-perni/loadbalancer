@@ -161,7 +161,7 @@ results:
 <div style="text-align: center;">
   <img
     alt="Figure 2: Prequal VS WRR at 2500 fixed cycles"
-    src="sources/performance_metrics_wrr_2500.png"
+    src="plotting/WRR_2500/performance_metrics.png"
     style="width:60%;"
     />
   <p>Figure 2: Prequal VS WRR at 2500 fixed cycles</p>
@@ -246,7 +246,7 @@ Also Prequal starts to struggle with the latency of the 99th percentile at heavy
 <div style="text-align: center;">
   <img
     alt="Figure 4: Results obtained in the test with exponential load with 2500 of mean."
-    src="sources/performance_metrics_min_exp.png"
+    src="plotting/WRR_var_load/performance_metrics.png"
     style="width:50%;"
     />
   <p>Figure 4: Results obtained in the test with exponential load with 2500 of mean and cap at 10000</p>
@@ -255,7 +255,7 @@ Also Prequal starts to struggle with the latency of the 99th percentile at heavy
 <div style="text-align: center;">
   <img
     alt="Figure 5: Results obtained in the test with exponential load with 5000 0f mean."
-    src="sources/performance_metrics_max_exp.png"
+    src="plotting/WRR_exp_load/performance_metrics.png"
     style="width:50%;"
     />
   <p>Figure 5: Results obtained in the test with exponential load with 5000 of mean and cap at 15000</p>
@@ -268,7 +268,7 @@ In addition to evaluating heterogeneous workloads, we also conducted an experime
 <div style="text-align: center;">
   <img
     alt="Figure 6: Results comparing Prequal and Least Loaded."
-    src="sources/performance_metrics_ll.png"
+    src="plotting/LL_2500/performance_metrics.png"
     style="width:50%;"
     />
   <p>Figure 6: Results obtained comparing Prequal and the Least Loaded algorithm</p>
@@ -296,20 +296,43 @@ rate. Unfortunately, we could not reproduce the paper's results with this setup;
 inconsistency, and Prequal often underperformed compared to WRR. The most likely reason is that the load balancers were
 being overloaded by the sheer volume of requests required to fill the capacity of 100 servers, hitting their CPU limits.
 We tried addressing this by increasing the workload payload to saturate the backends, changing the number of `hey`
-workers and their request rates, and testing different CPU limits, but the setup still did not behave as expected. While
-we are not entirely sure of the exact cause, it is likely that multiple infrastructural bottlenecks were at play. Another possible cause could be power of d-choises of our artifact.
+workers and their request rates, and testing different CPU limits, but the setup still did not behave as expected. Other
+possible reasons could be the deviations from the original setup regarding the Prequal implementation.
+In fact, here we are using a simplified version of the original artifact, where we probe all servers (not 16 like the
+paper) and use power-of-d choice equal to 2 instead of 3, as explained in the deviations.
 
 # 7. Conclusion
 
-Our project evaluated Prequal compared to the WRR algorithm in an environment made up of multiple servers. We succeeded in reproducing the results obtained in the report regarding the tail latency, confirming that balancing requests based on requests in flight and latency is more effective than using CPU utilization as balancing metric, especially if we look at tail latency.
+Our project evaluated Prequal compared to the WRR algorithm in an environment made up of multiple servers. We succeeded
+in reproducing the results obtained in the report regarding the tail latency, confirming that balancing requests based
+on requests in flight and latency is more effective than using CPU utilization as balancing metric, especially if we
+look at tail latency.
 
 From our experiment and further explorations we also gathered the following takeaways:
-- **Prequal is highly effective in situation of unpredictable loads:** While WRR can maintain acceptable median latencies under fixed or lightly variable loads, it severely penalizes unlucky servers when handling extreme heterogeneity. In fact, in our tests where the load was distributed with a negative exponential curve, WRR struggled immediately, while Prequal reported a better management of high heterogeneity.
-- **Advanced load balancing policies could be ineffective if infrastructure is the bottleneck:** In our attempt to compare Prequal with the LeastLoaded algorithm the results returned unexpected parity between the two loadbalancing policies (while in the paper Prequal clearly performs better). The reason behind that is not a fault in our implementation of Prequal or an extremely version of the LeastLoaded algorithm, but a CPU bottleneck on our load balancer node which prevented the backend servers from reaching the critical load thresholds where Prequal usually outperforms the other algorithms.
 
-  The same problem emerged even when we tried to reproduce the experiment using multiple virtual servers on the same physical machine. In that case WRR appeared to perform better, always due to a bottleneck in the CPU of the loadbalancer node. This demonstrates that while the underlying logic of Prequal is solid, adapting it requires careful architectural scaling to guarantee its benefits.
+- **Prequal is highly effective in situation of unpredictable loads:** While WRR can maintain acceptable median
+  latencies under fixed or lightly variable loads, it severely penalizes unlucky servers when handling extreme
+  heterogeneity. In fact, in our tests where the load was distributed with a negative exponential curve, WRR struggled
+  immediately, while Prequal reported a better management of high heterogeneity.
+- **Advanced load balancing policies could be ineffective if infrastructure is the bottleneck:** In our attempt to
+  compare Prequal with the LeastLoaded algorithm the results returned unexpected parity between the two loadbalancing
+  policies (while in the paper Prequal clearly performs better). The reason behind that is not a fault in our
+  implementation of Prequal or an extremely version of the LeastLoaded algorithm, but a CPU bottleneck on our load
+  balancer node which prevented the backend servers from reaching the critical load thresholds where Prequal usually
+  outperforms the other algorithms.
 
-- **Reproducibility Challenges:** While the provided artifact was a starting point to test the behaviour of Prequal, the lack of pseudocode in the original paper made a coherent replication of the algorithm an hard challenge. Furthermore, deploying the artifact on CloudLab required significant configuration adjustments. Finally, since Prequal is designed specifically to mitigate instantaneous latency spikes, a critical role is also played by the monitoring tools (in our case Prometheus and Grafana), a correct configuration (for example setting a correct sampling interval) and a cleaning of the output data (given that Grafana relies on moving average) is essential to analyze correctly the behaviour of the load balancing algorithms over short time intervals.
+  The same problem emerged even when we tried to reproduce the experiment using multiple virtual servers on the same
+  physical machine. In that case WRR appeared to perform better, always due to a bottleneck in the CPU of the
+  loadbalancer node. This demonstrates that while the underlying logic of Prequal is solid, adapting it requires careful
+  architectural scaling to guarantee its benefits.
+
+- **Reproducibility Challenges:** While the provided artifact was a starting point to test the behaviour of Prequal, the
+  lack of pseudocode in the original paper made a coherent replication of the algorithm an hard challenge. Furthermore,
+  deploying the artifact on CloudLab required significant configuration adjustments. Finally, since Prequal is designed
+  specifically to mitigate instantaneous latency spikes, a critical role is also played by the monitoring tools (in our
+  case Prometheus and Grafana), a correct configuration (for example setting a correct sampling interval) and a cleaning
+  of the output data (given that Grafana relies on moving average) is essential to analyze correctly the behaviour of
+  the load balancing algorithms over short time intervals.
 
 ---
 

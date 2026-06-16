@@ -1,38 +1,38 @@
 import argparse
 import glob
+import os
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
-import os
 import pandas as pd
 
 from preprocess import preprocess
 
-#argomenti da riga di comando
+# argomenti da riga di comando
 parser = argparse.ArgumentParser(description='Plot performance metrics da una cartella specifica.')
-parser.add_argument('-d', '--dir', type=str, required=True, 
+parser.add_argument('-d', '--dir', type=str, required=True,
                     help='Percorso della cartella contenente i file CSV (es. RR_2500, WRR_exp_load)')
-parser.add_argument('-p', '--preprocess', action='store_true',
-                    help='Preprocessa i CSV prima di generare il grafico')
+parser.add_argument('-p', '--preprocess', action='store_true', help='Preprocessa i CSV prima di generare il grafico')
 args = parser.parse_args()
+
 
 # Funzione helper per trovare il file corretto in base al prefisso
 def get_file_by_prefix(directory, prefix):
     search_pattern = os.path.join(directory, f"{prefix}*.csv")
-    matched_files = [
-        path for path in sorted(glob.glob(search_pattern))
-        if not os.path.splitext(path)[0].endswith('_prep')
-    ]
+    matched_files = [path for path in sorted(glob.glob(search_pattern)) if
+        not os.path.splitext(path)[0].endswith('_prep')]
     if not matched_files:
         raise FileNotFoundError(f"Errore: Nessun file che inizia con '{prefix}' trovato nella cartella '{directory}'")
     return matched_files[0]
+
 
 # Identificazione dinamica dei file nella cartella selezionata
 try:
     rate_file = get_file_by_prefix(args.dir, 'rate-')
     active_file = get_file_by_prefix(args.dir, 'act-')
     latency_file = get_file_by_prefix(args.dir, 'lat-')
-    
+
     print(f"Caricamento dati dalla cartella: {args.dir}")
     print(f"  -> Rate file: {os.path.basename(rate_file)}")
     print(f"  -> Active file: {os.path.basename(active_file)}")
@@ -66,6 +66,7 @@ for c in df_rate.columns:
         tested_algo = c
         break
 
+
 # Helper function per convertire le stringhe del rate
 def parse_rate(val):
     if pd.isna(val):
@@ -76,6 +77,7 @@ def parse_rate(val):
     if 'M' in val:
         return float(val.replace('M', '')) * 1000000
     return float(val)
+
 
 for col in ['prequal', tested_algo]:
     if col in df_rate.columns:
@@ -95,6 +97,7 @@ if not args.preprocess:
     df_latency = pd.read_csv(latency_file)
 normalize_time(df_latency)
 
+
 # Helper function per rimuovere "ms" e convertire
 def parse_latency(val):
     if pd.isna(val):
@@ -112,6 +115,7 @@ def parse_latency(val):
         return float(val) * multiplier
     except ValueError:
         return np.nan
+
 
 for col in df_latency.columns:
     if col != 'Time':
@@ -154,7 +158,8 @@ cols_to_plot = ['prequal p50', f'{tested_algo} p50', 'prequal p90', f'{tested_al
 linestyles = {'prequal p50': '-', f'{tested_algo} p50': '-', 'prequal p90': '--', f'{tested_algo} p90': '--',
               'prequal p99': ':', f'{tested_algo} p99': ':', 'prequal p99.9': '-.', f'{tested_algo} p99.9': '-.'}
 colors = {'prequal p50': '#1f77b4', f'{tested_algo} p50': '#ff7f0e', 'prequal p90': '#1f77b4',
-          f'{tested_algo} p90': '#ff7f0e', 'prequal p99': '#1f77b4', f'{tested_algo} p99': '#ff7f0e', 'prequal p99.9': '#1f77b4', f'{tested_algo} p99.9': '#ff7f0e'}
+          f'{tested_algo} p90': '#ff7f0e', 'prequal p99': '#1f77b4', f'{tested_algo} p99': '#ff7f0e',
+          'prequal p99.9': '#1f77b4', f'{tested_algo} p99.9': '#ff7f0e'}
 
 for col in cols_to_plot:
     if col in df_latency.columns:
@@ -166,12 +171,14 @@ axes[2].set_ylabel('Latency (μs)')
 axes[2].set_yscale('log')
 axes[2].yaxis.set_major_locator(ticker.LogLocator(base=10.0, subs=(1.0, 2.0, 5.0)))
 
+
 def format_ticks(x, pos):
     if x >= 1000000:
-        return f'{x/1000000:g}M'
+        return f'{x / 1000000:g}M'
     elif x >= 1000:
-        return f'{x/1000:g}k'
+        return f'{x / 1000:g}k'
     return f'{x:g}'
+
 
 axes[2].yaxis.set_major_formatter(ticker.FuncFormatter(format_ticks))
 axes[2].yaxis.set_minor_formatter(ticker.NullFormatter())

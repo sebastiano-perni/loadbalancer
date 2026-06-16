@@ -1,6 +1,7 @@
 import math
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 TIME_COLUMN = "Time"
 PREQUAL = "prequal"
@@ -50,7 +51,7 @@ def _algorithm_name(column):
 
 def _keep_times(dataframes, other_algo, trim_readings):
     labels = _phase_labels(dataframes, other_algo)
-    labels = labels[labels.index >= _first_prequal_time(labels)]
+    labels = labels[labels.index >= _first_other_algo_time(labels, other_algo)]
 
     runs = []
     current_label = None
@@ -116,11 +117,11 @@ def _phase_labels(dataframes, other_algo):
     return pd.Series(labels).sort_index()
 
 
-def _first_prequal_time(labels):
-    prequal_times = labels[labels == PREQUAL]
-    if prequal_times.empty:
-        raise ValueError(f"No '{PREQUAL}' phase found")
-    return prequal_times.index[0]
+def _first_other_algo_time(labels, other_algo):
+    other_times = labels[labels == other_algo]
+    if other_times.empty:
+        raise ValueError(f"No '{other_algo}' phase found")
+    return other_times.index[0]
 
 
 def _has_data(value):
