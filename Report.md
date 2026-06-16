@@ -177,7 +177,7 @@ CloudLab setup, but we ran into issues where it occasionally would not execute a
 
 ## Next steps
 The original artifact compared Prequal to Round Robin Balancing, while the paper compares Prequal to WRR. Thus, we had
-to change the balancer code in order to implement WRR.
+to change the balancer code in order to implement WRR. [Here](#implementation-of-wrr) is an extract of our implementation.
 
 The next step was to launch the artifact and see if it worked in a multi-server environment. Due to how the original
 artifact was set up, we had to modify the `docker-compose` configuration and create a few scripts to deploy the
@@ -246,22 +246,22 @@ First experiment (moderate heterogeneity):
 
 ```
 if work == 0 {
-			work = 1000 + int(rand.ExpFloat64()*1500)
-			if work > 10000 {
-				work = 10000
-			}
-		}
+	work = 1000 + int(rand.ExpFloat64()*1500)
+	if work > 10000 {
+		work = 10000
+	}
+}
 ```
 
 Second experiment (extreme heterogeneity):
 
 ```
 if work == 0 {
-			work = 1000 + int(rand.ExpFloat64()*4000)
-			if work > 15000 {
-				work = 15000
-			}
-		}
+	work = 1000 + int(rand.ExpFloat64()*4000)
+	if work > 15000 {
+        work = 15000
+    }
+}
 ```
 
 Note that the work corresponds to the execution of the SHA256 algorithm.
@@ -505,3 +505,46 @@ Browser connection to Grafana fails:
 You might have used the wrong port.
 Try waiting for about thirty seconds.
 You might have established the SSH tunnel with localhost to the wrong node.
+
+
+## Implementation of WRR
+
+```
+func (lb *LoadBalancer) selectServerWRR() *Server {
+	lb.mutex.RLock()
+	defer lb.mutex.RUnlock()
+
+	if len(lb.servers) == 0 {
+		return nil
+	}
+
+	var best *Server
+	var bestCW int32
+	var total int32
+
+	for _, server := range lb.servers {
+		if !server.IsHealthy {
+			continue
+		}
+
+		weight := int32((1.0 - server.CPUUsage) * 100)
+		if weight < 1 {
+			weight = 1
+		}
+
+		cw := atomic.AddInt32(&server.CurrentWeight, weight)
+		total += weight
+
+		if best == nil || cw > bestCW {
+			best = server
+			bestCW = cw
+		}
+	}
+
+	if best != nil {
+		atomic.AddInt32(&best.CurrentWeight, -total)
+	}
+
+	return best
+}
+```
