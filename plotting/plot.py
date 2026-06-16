@@ -1,6 +1,7 @@
 import argparse
 import glob
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 import os
 import pandas as pd
@@ -102,9 +103,10 @@ def parse_latency(val):
     multiplier = 1.0
     if val.endswith('ms'):
         val = val[:-2].strip()
+        multiplier = 1000.0
     elif val.endswith('s'):
         val = val[:-1].strip()
-        multiplier = 1000.0
+        multiplier = 1000000.0
 
     try:
         return float(val) * multiplier
@@ -160,8 +162,19 @@ for col in cols_to_plot:
                      color=colors.get(col))
 
 axes[2].set_title('Request Latency (p50, p90, p99, p99.9)')
-axes[2].set_ylabel('Latency (ms)')
+axes[2].set_ylabel('Latency (μs)')
 axes[2].set_yscale('log')
+axes[2].yaxis.set_major_locator(ticker.LogLocator(base=10.0, subs=(1.0, 2.0, 5.0)))
+
+def format_ticks(x, pos):
+    if x >= 1000000:
+        return f'{x/1000000:g}M'
+    elif x >= 1000:
+        return f'{x/1000:g}k'
+    return f'{x:g}'
+
+axes[2].yaxis.set_major_formatter(ticker.FuncFormatter(format_ticks))
+axes[2].yaxis.set_minor_formatter(ticker.NullFormatter())
 axes[2].set_xlabel('Minutes passed')
 axes[2].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=4, fontsize='small')
 axes[2].grid(True, linestyle='--', alpha=0.6)
