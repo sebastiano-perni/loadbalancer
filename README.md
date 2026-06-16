@@ -112,3 +112,140 @@ The dashboard (http://localhost:3001) includes an algorithm filter dropdown:
 ## References
 
 Based on the paper: [Load is not what you should balance: Introducing Prequal](https://www.usenix.org/conference/nsdi24/presentation/wydrowski) (NSDI '24)
+
+## Setup Procedure
+
+IMPORTANT: All scripts must be executed from the "client" node.
+Connect via SSH to the "client" node (copying the command from CloudLab).
+Navigate to the repository directory:
+
+```
+cd /local/repository
+```
+
+Execute the "initial_setup" script:
+
+```
+sudo ./initial_setup.sh
+```
+
+Execute the "start_cluster" script:
+
+```
+sudo ./start_cluster.sh <algorithm>
+```
+
+Where `<algorithm>` can be either roundrobin, wrr, random or leastloaded.
+Now all nodes should be online.
+
+### Running the Workload
+
+Execute the run_test script with the same arguments you would use for the compare script:
+
+```
+./run_test.sh --duration 180
+```
+
+Accessing Grafana
+Connect via SSH with localhost port forwarding to the "telemetry" node:
+
+```
+ssh -L 3000:localhost:3000 <user>@<server>
+```
+
+Note: The `<user>@<server>` string matches the one found on CloudLab for the "telemetry" node (removing the "ssh"
+prefix).
+You should now be able to access Grafana from your browser by navigating to: http://localhost:3000
+
+NOTE: Grafana only displays data when there is active traffic. If you access Grafana before running the workload, the
+dashboard will appear empty.
+
+### Teardown / Closing
+
+When you want to stop everything that was launched by start_cluster, simply run:
+
+```
+sudo ./stop_cluster.sh
+```
+
+This closes and resets the session (IT ALSO REMOVES ANY ACCUMULATED DATA).
+
+### Synchronizing Changes
+
+If you make a change that needs to be shared across all nodes, you can apply the change on the "client" node and then
+run the sync script:
+
+```
+sudo ./sync.sh
+```
+
+The modification can be done locally, or it could have been pushed to GitHub. In the latter case, simply perform a git
+pull on the "client" node before running the sync script.
+
+### Troubleshooting
+
+Permission Failures: If execution fails due to permissions, you might have forgotten to use sudo.
+Missing Dependencies: If execution fails because of missing dependencies like Go, Hey, Docker, etc., try installing them
+manually on the respective nodes.
+Grafana fails to close after stop_cluster: The container on the "telemetry" node might not have stopped. In this case,
+connect to that node via SSH and check for running containers using:
+
+```
+sudo docker ps
+```
+
+If containers are still running, you must stop and remove them manually:
+
+```
+sudo docker stop repository-grafana-1
+sudo docker rm repository-grafana-1
+```
+
+Repeat this process for Prometheus if necessary.
+Browser connection to Grafana fails:
+You might have used the wrong port.
+Try waiting for about thirty seconds.
+You might have established the SSH tunnel with localhost to the wrong node.
+
+
+## Implementation of WRR
+
+```
+func (lb *LoadBalancer) selectServerWRR() *Server {
+	lb.mutex.RLock()
+	defer lb.mutex.RUnlock()
+
+	if len(lb.servers) == 0 {
+		return nil
+	}
+
+	var best *Server
+	var bestCW int32
+	var total int32
+
+	for _, server := range lb.servers {
+		if !server.IsHealthy {
+			continue
+		}
+
+		weight := int32((1.0 - server.CPUUsage) * 100)
+		if weight < 1 {
+			weight = 1
+		}
+
+		cw := atomic.AddInt32(&server.CurrentWeight, weight)
+		total += weight
+
+		if best == nil || cw > bestCW {
+			best = server
+			bestCW = cw
+		}
+	}
+
+	if best != nil {
+		atomic.AddInt32(&best.CurrentWeight, -total)
+	}
+
+	return best
+}
+```
