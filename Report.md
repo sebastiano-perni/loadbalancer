@@ -154,6 +154,13 @@ artifact was set up, we had to modify the `docker-compose` configuration and cre
 infrastructure according to our requirements. When setting up the servers using our `start_cluster.sh` script, you can
 specify which load-balancing algorithm you want to use.
 
+### Execution of the experiment
+-  Each load step was sustained for 180 seconds to ensure the system reached a steady state.
+- Telemetry was gathered using Prometheus, scraping the metrics of the servers every 3 seconds. Data visualization and metric aggregation were handled via Grafana.
+-  Tail latencies (p50, p90, p99, and p99.9) were calculated using Prometheus's `histogram_quantile` function.
+
+### Results
+
 After testing a configuration of 14 servers (1 client, 1 telemetry, 2 load balancers, and 10 servers) and verifying that
 the servers were visible in Grafana, we started collecting data on Prequal vs. WRR metrics. We obtained the following
 results:
@@ -167,11 +174,13 @@ results:
   <p>Figure 2: Prequal VS WRR at 2500 fixed cycles</p>
 </div>
 
-As we can see from the figure, Prequal and WRR perform very similarly at load levels below 100%, where there is enough
+As we can see from the figure, Prequal and WRR perform very similarly at load levels below 103% (as it happens in the paper), where there is enough
 free CPU to absorb the variance. However, as the load increases, WRR starts to struggle with tail latency, while Prequal
 continues to maintain much better performance. This aligns with the results of the paper, which shows that WRR's focus
 on CPU utilization leads to severe penalties for unlucky servers, while Prequal's approach of balancing based on RIF and
 latency allows it to better manage such conditions.
+The behaviour of tail latencies between the paper and the experiment conducted is quite similar, where the 99.9th percentile of WRR exceed 200 ms of latency since the beginning (in the paper is 5s since the scale of the problem is bigger), moving towards bigger workloads the latency of the 99th percentile reach similar values to the one of the 99.9th percentile and also the 90th percentile increase.
+The only big anomaly reported is the behaviour of the 90th percentile of WRR at the sixth iteration, which reports lower levels of latency compared to the values achieved in the fifth iteration.
 
 If you want to try out our experiment, refer to [Setup Procedure](#setup-procedure) in Appendix.
 
